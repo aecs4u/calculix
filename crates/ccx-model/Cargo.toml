@@ -1,0 +1,12 @@
+[package]
+name = "ccx-model"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ccx-inp = { path = "../ccx-inp" }
+
+[lib]
+name = "ccx_model"
+path = "src/lib.rs"
+

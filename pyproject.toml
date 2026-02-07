@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "calculix-migration-tooling"
+version = "0.1.0"
+description = "Tooling and tests for CalculiX migration work"
+requires-python = ">=3.10"
+dependencies = [
+    "pynastran>=1.4.1",
+]
+
+[project.scripts]
+nastran-reader = "calculix_migration_tooling.nastran_reader:main"
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8",
+  "gcovr>=7",
+]
+
+[tool.setuptools]
+packages = ["calculix_migration_tooling"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra"
+testpaths = ["tests"]
+markers = [
+  "solver: solver (ccx) tests",
+  "viewer: viewer (cgx) tests",
+  "integration: integration tests requiring binaries",
+  "smoke: fast smoke tests",
+  "fullmatrix: full example matrix execution",
+]

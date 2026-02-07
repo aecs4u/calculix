@@ -1,0 +1,13 @@
+[package]
+name = "ccx-cli"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ccx-inp = { path = "../ccx-inp" }
+ccx-model = { path = "../ccx-model" }
+
+[[bin]]
+name = "ccx-cli"
+path = "src/main.rs"
+

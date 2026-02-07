@@ -39,3 +39,17 @@
 
 # debug information files
 *.dwo
+
+# Python test artifacts
+.pytest_cache/
+.coverage
+__pycache__/
+
+# Coverage reports
+build/coverage/
+
+# Rust build artifacts
+target/
+
+# Python packaging artifacts
+*.egg-info/

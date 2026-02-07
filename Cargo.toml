@@ -1,0 +1,8 @@
+[workspace]
+members = [
+  "crates/ccx-cli",
+  "crates/ccx-inp",
+  "crates/ccx-model",
+]
+resolver = "2"
+
