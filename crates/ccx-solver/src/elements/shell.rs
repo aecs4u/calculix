@@ -207,12 +207,78 @@ impl S4 {
         Ok(SMatrix::<f64, 24, 24>::identity())
     }
 
-    /// Placeholder for transformation matrix (local → global)
+    /// Build transformation matrix (local → global coordinates)
     ///
-    /// TODO: Implement coordinate transformation based on element orientation
-    fn transformation_matrix(&self, _nodes: &[Node]) -> Result<DMatrix<f64>, String> {
-        // Placeholder: return identity matrix
-        Ok(DMatrix::identity(24, 24))
+    /// The local coordinate system is defined by:
+    /// - Local x-axis: direction from node 0 to node 1
+    /// - Local z-axis: surface normal (via cross product)
+    /// - Local y-axis: z × x (right-handed system)
+    ///
+    /// Returns a 24×24 block-diagonal matrix where each 6×6 block contains
+    /// the same 3×3 rotation matrix R repeated twice (for translations and rotations)
+    fn transformation_matrix(&self, nodes: &[Node]) -> Result<DMatrix<f64>, String> {
+        if nodes.len() != 4 {
+            return Err(format!(
+                "Expected 4 nodes for transformation, got {}",
+                nodes.len()
+            ));
+        }
+
+        // Define local x-axis: direction from node 0 → node 1
+        let x_local_vec = Vector3::new(
+            nodes[1].x - nodes[0].x,
+            nodes[1].y - nodes[0].y,
+            nodes[1].z - nodes[0].z,
+        );
+        let x_local_norm = x_local_vec.norm();
+        if x_local_norm < 1e-10 {
+            return Err(format!(
+                "Element {} has degenerate x-axis (nodes 0 and 1 coincide)",
+                self.id
+            ));
+        }
+        let x_local = x_local_vec / x_local_norm;
+
+        // Define local z-axis: surface normal
+        let z_local = self.surface_normal(nodes)?;
+
+        // Define local y-axis: z × x (right-handed system)
+        let y_local = z_local.cross(&x_local);
+        let y_local_norm = y_local.norm();
+        if y_local_norm < 1e-10 {
+            return Err(format!(
+                "Element {} has degenerate y-axis (x and z are parallel)",
+                self.id
+            ));
+        }
+        let y_local = y_local / y_local_norm;
+
+        // Build 3×3 rotation matrix R from basis vectors
+        // R = [x_local | y_local | z_local] (column vectors)
+        let r = nalgebra::Matrix3::from_columns(&[x_local, y_local, z_local]);
+
+        // Expand to 24×24 block-diagonal transformation matrix
+        // Each node has 6 DOFs: [ux, uy, uz, θx, θy, θz]
+        // The rotation matrix R applies to both translations and rotations
+        let mut t = DMatrix::zeros(24, 24);
+
+        for i in 0..4 {
+            // Node i: DOFs are at indices [6*i .. 6*i+6]
+            // Translation block [6*i .. 6*i+3, 6*i .. 6*i+3] = R
+            for row in 0..3 {
+                for col in 0..3 {
+                    t[(6 * i + row, 6 * i + col)] = r[(row, col)];
+                }
+            }
+            // Rotation block [6*i+3 .. 6*i+6, 6*i+3 .. 6*i+6] = R
+            for row in 0..3 {
+                for col in 0..3 {
+                    t[(6 * i + 3 + row, 6 * i + 3 + col)] = r[(row, col)];
+                }
+            }
+        }
+
+        Ok(t)
     }
 }
 
@@ -357,5 +423,171 @@ mod tests {
 
         assert_eq!(k.nrows(), 24);
         assert_eq!(k.ncols(), 24);
+    }
+
+    #[test]
+    fn transformation_matrix_dimensions() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes();
+
+        let t = shell
+            .transformation_matrix(&nodes)
+            .expect("Should compute transformation");
+
+        assert_eq!(t.nrows(), 24, "Transformation matrix should be 24×24");
+        assert_eq!(t.ncols(), 24, "Transformation matrix should be 24×24");
+    }
+
+    #[test]
+    fn transformation_matrix_orthogonal() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes();
+
+        let t = shell
+            .transformation_matrix(&nodes)
+            .expect("Should compute transformation");
+
+        // Check orthogonality: T^T * T = I
+        let identity = &t.transpose() * &t;
+
+        // Check diagonal elements are ~1
+        for i in 0..24 {
+            assert!(
+                (identity[(i, i)] - 1.0).abs() < 1e-10,
+                "Diagonal element ({},{}) should be 1.0, got {}",
+                i,
+                i,
+                identity[(i, i)]
+            );
+        }
+
+        // Check off-diagonal elements are ~0
+        for i in 0..24 {
+            for j in 0..24 {
+                if i != j {
+                    assert!(
+                        identity[(i, j)].abs() < 1e-10,
+                        "Off-diagonal element ({},{}) should be ~0, got {}",
+                        i,
+                        j,
+                        identity[(i, j)]
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn transformation_matrix_right_handed() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes();
+
+        let t = shell
+            .transformation_matrix(&nodes)
+            .expect("Should compute transformation");
+
+        // Extract the 3×3 rotation matrix from the first node's translation block
+        let r11 = t[(0, 0)];
+        let r12 = t[(0, 1)];
+        let r13 = t[(0, 2)];
+        let r21 = t[(1, 0)];
+        let r22 = t[(1, 1)];
+        let r23 = t[(1, 2)];
+        let r31 = t[(2, 0)];
+        let r32 = t[(2, 1)];
+        let r33 = t[(2, 2)];
+
+        // Check determinant = +1 (right-handed)
+        let det = r11 * (r22 * r33 - r23 * r32) - r12 * (r21 * r33 - r23 * r31)
+            + r13 * (r21 * r32 - r22 * r31);
+
+        assert!(
+            (det - 1.0).abs() < 1e-10,
+            "Determinant should be +1 for right-handed system, got {}",
+            det
+        );
+    }
+
+    #[test]
+    fn transformation_matrix_block_diagonal() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes();
+
+        let t = shell
+            .transformation_matrix(&nodes)
+            .expect("Should compute transformation");
+
+        // Verify that the rotation matrix is the same for all 4 nodes
+        // Compare node 0's translation block with other nodes' translation blocks
+        for node in 1..4 {
+            for row in 0..3 {
+                for col in 0..3 {
+                    let val_node0 = t[(row, col)];
+                    let val_nodei = t[(6 * node + row, 6 * node + col)];
+                    assert!(
+                        (val_node0 - val_nodei).abs() < 1e-10,
+                        "Node {} translation block should match node 0",
+                        node
+                    );
+                }
+            }
+        }
+
+        // Verify that translation and rotation blocks are identical for each node
+        for node in 0..4 {
+            for row in 0..3 {
+                for col in 0..3 {
+                    let trans_val = t[(6 * node + row, 6 * node + col)];
+                    let rot_val = t[(6 * node + 3 + row, 6 * node + 3 + col)];
+                    assert!(
+                        (trans_val - rot_val).abs() < 1e-10,
+                        "Translation and rotation blocks should match for node {}",
+                        node
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn transformation_matrix_xy_plane() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes(); // Z=0 plane
+
+        let t = shell
+            .transformation_matrix(&nodes)
+            .expect("Should compute transformation");
+
+        // For XY plane:
+        // - Local x should align with global X (node 0→1 is in X direction)
+        // - Local z should align with global Z (surface normal points in Z)
+        // - Local y should align with global Y
+
+        // Check local x-axis (first column of rotation matrix)
+        let x_local_x = t[(0, 0)];
+        let x_local_y = t[(1, 0)];
+        let x_local_z = t[(2, 0)];
+        assert!(
+            (x_local_x - 1.0).abs() < 1e-10,
+            "Local x should point in global X"
+        );
+        assert!(x_local_y.abs() < 1e-10, "Local x should have no Y component");
+        assert!(x_local_z.abs() < 1e-10, "Local x should have no Z component");
+
+        // Check local z-axis (third column of rotation matrix)
+        let z_local_x = t[(0, 2)];
+        let z_local_y = t[(1, 2)];
+        let z_local_z = t[(2, 2)];
+        assert!(z_local_x.abs() < 1e-10, "Local z should have no X component");
+        assert!(z_local_y.abs() < 1e-10, "Local z should have no Y component");
+        assert!(
+            z_local_z.abs() > 0.99,
+            "Local z should point in ±Z direction"
+        );
     }
 }
