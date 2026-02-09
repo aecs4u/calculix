@@ -195,6 +195,167 @@ impl S4 {
         Ok(true)
     }
 
+    /// Bilinear shape functions for 4-node quadrilateral in natural coordinates (ξ, η)
+    ///
+    /// Returns [N1, N2, N3, N4] where:
+    /// - N1 = 1/4 * (1-ξ)(1-η)  (node at (-1,-1))
+    /// - N2 = 1/4 * (1+ξ)(1-η)  (node at (+1,-1))
+    /// - N3 = 1/4 * (1+ξ)(1+η)  (node at (+1,+1))
+    /// - N4 = 1/4 * (1-ξ)(1+η)  (node at (-1,+1))
+    fn shape_functions(xi: f64, eta: f64) -> [f64; 4] {
+        [
+            0.25 * (1.0 - xi) * (1.0 - eta),
+            0.25 * (1.0 + xi) * (1.0 - eta),
+            0.25 * (1.0 + xi) * (1.0 + eta),
+            0.25 * (1.0 - xi) * (1.0 + eta),
+        ]
+    }
+
+    /// Derivatives of shape functions with respect to natural coordinates (ξ, η)
+    ///
+    /// Returns (dN/dξ, dN/dη) where each is [dN1, dN2, dN3, dN4]
+    fn shape_function_derivatives(xi: f64, eta: f64) -> ([f64; 4], [f64; 4]) {
+        let dn_dxi = [
+            -0.25 * (1.0 - eta),
+            0.25 * (1.0 - eta),
+            0.25 * (1.0 + eta),
+            -0.25 * (1.0 + eta),
+        ];
+        let dn_deta = [
+            -0.25 * (1.0 - xi),
+            -0.25 * (1.0 + xi),
+            0.25 * (1.0 + xi),
+            0.25 * (1.0 - xi),
+        ];
+        (dn_dxi, dn_deta)
+    }
+
+    /// Compute Jacobian matrix and its inverse at a given integration point
+    ///
+    /// J = [dx/dξ  dy/dξ]
+    ///     [dx/dη  dy/dη]
+    ///
+    /// Returns (J, J_inv, det_J)
+    fn jacobian(
+        &self,
+        nodes: &[Node],
+        xi: f64,
+        eta: f64,
+    ) -> Result<(nalgebra::Matrix2<f64>, nalgebra::Matrix2<f64>, f64), String> {
+        let (dn_dxi, dn_deta) = Self::shape_function_derivatives(xi, eta);
+
+        // Compute Jacobian matrix
+        let mut dx_dxi = 0.0;
+        let mut dy_dxi = 0.0;
+        let mut dx_deta = 0.0;
+        let mut dy_deta = 0.0;
+
+        for i in 0..4 {
+            dx_dxi += dn_dxi[i] * nodes[i].x;
+            dy_dxi += dn_dxi[i] * nodes[i].y;
+            dx_deta += dn_deta[i] * nodes[i].x;
+            dy_deta += dn_deta[i] * nodes[i].y;
+        }
+
+        let j = nalgebra::Matrix2::new(dx_dxi, dy_dxi, dx_deta, dy_deta);
+
+        // Compute determinant
+        let det_j = j.determinant();
+        if det_j.abs() < 1e-10 {
+            return Err(format!("Element {} has singular Jacobian", self.id));
+        }
+
+        // Compute inverse
+        let j_inv = j
+            .try_inverse()
+            .ok_or_else(|| format!("Element {} Jacobian not invertible", self.id))?;
+
+        Ok((j, j_inv, det_j))
+    }
+
+    /// Compute membrane stiffness matrix (in-plane stretching)
+    ///
+    /// Uses 2×2 Gauss quadrature integration
+    /// Returns 8×8 matrix for membrane DOFs: [ux1, uy1, ux2, uy2, ux3, uy3, ux4, uy4]
+    fn membrane_stiffness(
+        &self,
+        nodes: &[Node],
+        material: &Material,
+    ) -> Result<nalgebra::SMatrix<f64, 8, 8>, String> {
+        if nodes.len() != 4 {
+            return Err(format!(
+                "Expected 4 nodes for membrane stiffness, got {}",
+                nodes.len()
+            ));
+        }
+
+        // Get material properties
+        let e = material
+            .elastic_modulus
+            .ok_or_else(|| "Material missing elastic modulus".to_string())?;
+        let nu = material
+            .poissons_ratio
+            .ok_or_else(|| "Material missing Poisson's ratio".to_string())?;
+
+        // Plane stress material matrix
+        let factor = e / (1.0 - nu * nu);
+        let d = nalgebra::Matrix3::new(
+            factor,
+            factor * nu,
+            0.0,
+            factor * nu,
+            factor,
+            0.0,
+            0.0,
+            0.0,
+            factor * (1.0 - nu) / 2.0,
+        );
+
+        // 2×2 Gauss quadrature points and weights
+        let gp = 1.0 / f64::sqrt(3.0); // ±0.577350...
+        let gauss_points = [(-gp, -gp), (gp, -gp), (gp, gp), (-gp, gp)];
+        let weights = [1.0, 1.0, 1.0, 1.0];
+
+        // Initialize stiffness matrix
+        let mut k_membrane = nalgebra::SMatrix::<f64, 8, 8>::zeros();
+
+        // Integrate over element
+        for (gp_idx, &(xi, eta)) in gauss_points.iter().enumerate() {
+            let weight = weights[gp_idx];
+
+            // Compute Jacobian
+            let (_j, j_inv, det_j) = self.jacobian(nodes, xi, eta)?;
+
+            // Shape function derivatives in natural coordinates
+            let (dn_dxi, dn_deta) = Self::shape_function_derivatives(xi, eta);
+
+            // Transform derivatives to physical coordinates using inverse Jacobian
+            let mut dn_dx = [0.0; 4];
+            let mut dn_dy = [0.0; 4];
+            for i in 0..4 {
+                dn_dx[i] = j_inv[(0, 0)] * dn_dxi[i] + j_inv[(0, 1)] * dn_deta[i];
+                dn_dy[i] = j_inv[(1, 0)] * dn_dxi[i] + j_inv[(1, 1)] * dn_deta[i];
+            }
+
+            // Build strain-displacement matrix B (3×8)
+            // ε = B * u, where ε = [εxx, εyy, γxy]^T
+            let mut b = nalgebra::SMatrix::<f64, 3, 8>::zeros();
+            for i in 0..4 {
+                b[(0, 2 * i)] = dn_dx[i]; // εxx from ux
+                b[(1, 2 * i + 1)] = dn_dy[i]; // εyy from uy
+                b[(2, 2 * i)] = dn_dy[i]; // γxy from ux
+                b[(2, 2 * i + 1)] = dn_dx[i]; // γxy from uy
+            }
+
+            // K += B^T * D * B * det(J) * weight * thickness
+            let bt_d = b.transpose() * d;
+            let bt_d_b = bt_d * b;
+            k_membrane += bt_d_b * det_j * weight * self.section.thickness;
+        }
+
+        Ok(k_membrane)
+    }
+
     /// Placeholder for local stiffness matrix
     ///
     /// TODO: Implement membrane + bending + drilling stiffness
@@ -588,6 +749,196 @@ mod tests {
         assert!(
             z_local_z.abs() > 0.99,
             "Local z should point in ±Z direction"
+        );
+    }
+
+    #[test]
+    fn shape_functions_partition_of_unity() {
+        // Shape functions should sum to 1 at any point
+        let test_points = [
+            (0.0, 0.0),
+            (0.5, 0.5),
+            (-0.7, 0.3),
+            (0.9, -0.9),
+        ];
+
+        for (xi, eta) in test_points {
+            let n = S4::shape_functions(xi, eta);
+            let sum: f64 = n.iter().sum();
+            assert!(
+                (sum - 1.0).abs() < 1e-10,
+                "Shape functions should sum to 1 at ({}, {}), got {}",
+                xi,
+                eta,
+                sum
+            );
+        }
+    }
+
+    #[test]
+    fn shape_functions_at_nodes() {
+        // At node i, N_i = 1 and all other N_j = 0
+        let node_coords = [
+            (-1.0, -1.0), // Node 0
+            (1.0, -1.0),  // Node 1
+            (1.0, 1.0),   // Node 2
+            (-1.0, 1.0),  // Node 3
+        ];
+
+        for (i, (xi, eta)) in node_coords.iter().enumerate() {
+            let n = S4::shape_functions(*xi, *eta);
+            for (j, &val) in n.iter().enumerate() {
+                if i == j {
+                    assert!(
+                        (val - 1.0).abs() < 1e-10,
+                        "N_{} should be 1 at node {}",
+                        j,
+                        i
+                    );
+                } else {
+                    assert!(
+                        val.abs() < 1e-10,
+                        "N_{} should be 0 at node {}, got {}",
+                        j,
+                        i,
+                        val
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn jacobian_computation() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes(); // 1×1 square
+
+        // At element center (0,0)
+        let (j, j_inv, det_j) = shell
+            .jacobian(&nodes, 0.0, 0.0)
+            .expect("Should compute Jacobian");
+
+        // For a 1×1 square, Jacobian should be 0.5*I (scaling from [-1,1]² to [0,1]²)
+        assert!(
+            (j[(0, 0)] - 0.5).abs() < 1e-10,
+            "J[0,0] should be 0.5 for unit square"
+        );
+        assert!(
+            (j[(1, 1)] - 0.5).abs() < 1e-10,
+            "J[1,1] should be 0.5 for unit square"
+        );
+        assert!(j[(0, 1)].abs() < 1e-10, "J[0,1] should be 0 for aligned square");
+        assert!(j[(1, 0)].abs() < 1e-10, "J[1,0] should be 0 for aligned square");
+
+        // Determinant should be 0.25
+        assert!(
+            (det_j - 0.25).abs() < 1e-10,
+            "det(J) should be 0.25, got {}",
+            det_j
+        );
+
+        // Check J * J_inv = I
+        let identity = j * j_inv;
+        assert!(
+            (identity[(0, 0)] - 1.0).abs() < 1e-10,
+            "J*J_inv should be identity"
+        );
+        assert!(
+            (identity[(1, 1)] - 1.0).abs() < 1e-10,
+            "J*J_inv should be identity"
+        );
+        assert!(
+            identity[(0, 1)].abs() < 1e-10,
+            "J*J_inv should be identity"
+        );
+        assert!(
+            identity[(1, 0)].abs() < 1e-10,
+            "J*J_inv should be identity"
+        );
+    }
+
+    #[test]
+    fn membrane_stiffness_dimensions() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes();
+        let material = make_steel_material();
+
+        let k_mem = shell
+            .membrane_stiffness(&nodes, &material)
+            .expect("Should compute membrane stiffness");
+
+        assert_eq!(k_mem.nrows(), 8, "Membrane stiffness should be 8×8");
+        assert_eq!(k_mem.ncols(), 8, "Membrane stiffness should be 8×8");
+    }
+
+    #[test]
+    fn membrane_stiffness_symmetric() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes();
+        let material = make_steel_material();
+
+        let k_mem = shell
+            .membrane_stiffness(&nodes, &material)
+            .expect("Should compute membrane stiffness");
+
+        // Check symmetry
+        for i in 0..8 {
+            for j in 0..8 {
+                let diff = (k_mem[(i, j)] - k_mem[(j, i)]).abs();
+                assert!(
+                    diff < 1e-6,
+                    "Membrane stiffness should be symmetric: K[{},{}]={}, K[{},{}]={}",
+                    i,
+                    j,
+                    k_mem[(i, j)],
+                    j,
+                    i,
+                    k_mem[(j, i)]
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn membrane_stiffness_positive_definite() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes();
+        let material = make_steel_material();
+
+        let k_mem = shell
+            .membrane_stiffness(&nodes, &material)
+            .expect("Should compute membrane stiffness");
+
+        // Check positive semi-definite (all eigenvalues ≥ 0)
+        // Note: Membrane stiffness has 3 rigid body modes (2 translations + 1 rotation)
+        // so we expect 3 near-zero eigenvalues
+        let eigen = k_mem.symmetric_eigen();
+        let eigenvalues = eigen.eigenvalues;
+
+        let mut positive_eigenvalues = 0;
+        let mut near_zero_eigenvalues = 0;
+
+        for &eig in eigenvalues.iter() {
+            if eig > 1e-3 {
+                positive_eigenvalues += 1;
+            } else if eig > -1e-6 {
+                near_zero_eigenvalues += 1;
+            } else {
+                panic!("Found negative eigenvalue: {}", eig);
+            }
+        }
+
+        assert_eq!(
+            positive_eigenvalues, 5,
+            "Should have 5 positive eigenvalues (8 DOFs - 3 rigid body modes)"
+        );
+        assert_eq!(
+            near_zero_eigenvalues, 3,
+            "Should have 3 near-zero eigenvalues (rigid body modes)"
         );
     }
 }
