@@ -362,16 +362,18 @@ mod tests {
         let materials = make_material_library();
 
         let mut bcs = BoundaryConditions::new();
-        // Fix node 1
+        // Fix node 1 in all directions
         bcs.add_displacement_bc(DisplacementBC::new(1, 1, 3, 0.0));
-        // Apply force to node 2
+        // Fix node 2 in y and z directions (truss along x-axis doesn't constrain these)
+        bcs.add_displacement_bc(DisplacementBC::new(2, 2, 3, 0.0));
+        // Apply force to node 2 in x-direction
         bcs.add_concentrated_load(ConcentratedLoad::new(2, 1, 1000.0));
 
         let area = 0.01; // 100 cm²
         let system = SparseGlobalSystem::assemble(&mesh, &materials, &bcs, area)
             .expect("Assembly should succeed");
 
-        assert_eq!(system.num_dofs, 6); // 2 nodes × 3 DOFs
+        assert_eq!(system.num_dofs, 6); // 2 nodes × 3 DOFs (max across elements)
         assert!(!system.constrained_dofs.is_empty());
 
         // Solve
@@ -384,6 +386,11 @@ mod tests {
 
         // Node 2 should have positive x displacement
         assert!(displacements[3] > 0.0);
+
+        // Analytical solution: u = FL/(AE) = 1000 * 1.0 / (0.01 * 210000) = 0.000476 m
+        let expected = 1000.0 / (0.01 * 210000.0);
+        let rel_error = ((displacements[3] - expected) / expected).abs();
+        assert!(rel_error < 0.01, "Relative error: {}", rel_error);
     }
 
     #[test]
