@@ -69,6 +69,7 @@ dependencies = [
  "ccx-inp",
  "ccx-model",
  "nalgebra",
+ "nalgebra-sparse",
 ]
 
 [[package]]
@@ -118,6 +119,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "nalgebra-sparse"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1107e2587bc373090389bd5b54e05ac3184fd02d7c102decf5d76b8feb84b2d0"
+dependencies = [
+ "nalgebra",
+ "num-traits",
 ]
 
 [[package]]

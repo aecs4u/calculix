@@ -16,6 +16,7 @@ pub mod mesh_builder;
 pub mod ported;
 pub mod postprocess;
 pub mod sets;
+pub mod sparse_assembly;
 
 pub use analysis::{AnalysisConfig, AnalysisPipeline, AnalysisResults, AnalysisType};
 pub use assembly::GlobalSystem;
@@ -32,6 +33,7 @@ pub use postprocess::{
     StrainState, StressState,
 };
 pub use sets::{ElementSet, NodeSet, Sets};
+pub use sparse_assembly::SparseGlobalSystem;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum LegacyLanguage {

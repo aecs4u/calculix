@@ -8,6 +8,7 @@ build = "build.rs"
 ccx-inp = { path = "../ccx-inp" }
 ccx-model = { path = "../ccx-model" }
 nalgebra = { version = "0.33", features = ["sparse"] }
+nalgebra-sparse = "0.10"
 
 [[bin]]
 name = "ccx-solver"
