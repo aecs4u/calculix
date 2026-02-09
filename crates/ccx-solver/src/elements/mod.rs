@@ -6,10 +6,12 @@ use nalgebra::DMatrix;
 
 pub mod beam;
 pub mod factory;
+pub mod shell;
 pub mod truss;
 
 pub use beam::{Beam31, BeamSection};
 pub use factory::DynamicElement;
+pub use shell::{S4, ShellSection};
 pub use truss::Truss2D;
 
 /// Element interface for finite element calculations
