@@ -356,6 +356,106 @@ impl S4 {
         Ok(k_membrane)
     }
 
+    /// Compute bending stiffness matrix (out-of-plane bending)
+    ///
+    /// Uses Mindlin-Reissner plate theory (includes transverse shear)
+    /// Returns 12×12 matrix for bending DOFs: [uz1, θx1, θy1, uz2, θx2, θy2, ...]
+    fn bending_stiffness(
+        &self,
+        nodes: &[Node],
+        material: &Material,
+    ) -> Result<nalgebra::SMatrix<f64, 12, 12>, String> {
+        if nodes.len() != 4 {
+            return Err(format!(
+                "Expected 4 nodes for bending stiffness, got {}",
+                nodes.len()
+            ));
+        }
+
+        // Get material properties
+        let e = material
+            .elastic_modulus
+            .ok_or_else(|| "Material missing elastic modulus".to_string())?;
+        let nu = material
+            .poissons_ratio
+            .ok_or_else(|| "Material missing Poisson's ratio".to_string())?;
+        let g = e / (2.0 * (1.0 + nu)); // Shear modulus
+
+        let t = self.section.thickness;
+
+        // Bending material matrix (moment-curvature relationship)
+        // D_b = E*t³/(12(1-ν²)) * [[1, ν, 0], [ν, 1, 0], [0, 0, (1-ν)/2]]
+        let d_factor = e * t * t * t / (12.0 * (1.0 - nu * nu));
+        let d_bending = nalgebra::Matrix3::new(
+            d_factor,
+            d_factor * nu,
+            0.0,
+            d_factor * nu,
+            d_factor,
+            0.0,
+            0.0,
+            0.0,
+            d_factor * (1.0 - nu) / 2.0,
+        );
+
+        // Shear material matrix (for transverse shear coupling)
+        // D_s = κ * G * t * [[1, 0], [0, 1]]
+        // where κ = 5/6 is the shear correction factor
+        let kappa = 5.0 / 6.0;
+        let d_shear_factor = kappa * g * t;
+        let d_shear = nalgebra::Matrix2::new(d_shear_factor, 0.0, 0.0, d_shear_factor);
+
+        // 2×2 Gauss quadrature
+        let gp = 1.0 / f64::sqrt(3.0);
+        let gauss_points = [(-gp, -gp), (gp, -gp), (gp, gp), (-gp, gp)];
+        let weights = [1.0, 1.0, 1.0, 1.0];
+
+        let mut k_bending = nalgebra::SMatrix::<f64, 12, 12>::zeros();
+
+        for (gp_idx, &(xi, eta)) in gauss_points.iter().enumerate() {
+            let weight = weights[gp_idx];
+            let (_j, j_inv, det_j) = self.jacobian(nodes, xi, eta)?;
+            let n = Self::shape_functions(xi, eta);
+            let (dn_dxi, dn_deta) = Self::shape_function_derivatives(xi, eta);
+
+            let mut dn_dx = [0.0; 4];
+            let mut dn_dy = [0.0; 4];
+            for i in 0..4 {
+                dn_dx[i] = j_inv[(0, 0)] * dn_dxi[i] + j_inv[(0, 1)] * dn_deta[i];
+                dn_dy[i] = j_inv[(1, 0)] * dn_dxi[i] + j_inv[(1, 1)] * dn_deta[i];
+            }
+
+            // === Bending part: Curvature-rotation relationship ===
+            // κ = [∂θy/∂x, -∂θx/∂y, (∂θy/∂y - ∂θx/∂x)]
+            let mut bb = nalgebra::SMatrix::<f64, 3, 12>::zeros();
+            for i in 0..4 {
+                bb[(0, 3 * i + 2)] = dn_dx[i]; // κxx from θy
+                bb[(1, 3 * i + 1)] = -dn_dy[i]; // κyy from θx
+                bb[(2, 3 * i + 1)] = -dn_dx[i]; // κxy from θx
+                bb[(2, 3 * i + 2)] = dn_dy[i]; // κxy from θy
+            }
+
+            k_bending += bb.transpose() * d_bending * bb * det_j * weight;
+
+            // === Shear part: Couples uz to rotations ===
+            // γ = [∂w/∂x - θy, ∂w/∂y + θx]
+            let mut bs = nalgebra::SMatrix::<f64, 2, 12>::zeros();
+            for i in 0..4 {
+                // γxz = ∂w/∂x - θy
+                bs[(0, 3 * i)] = dn_dx[i]; // from uz
+                bs[(0, 3 * i + 2)] = -n[i]; // from -θy
+
+                // γyz = ∂w/∂y + θx
+                bs[(1, 3 * i)] = dn_dy[i]; // from uz
+                bs[(1, 3 * i + 1)] = n[i]; // from θx
+            }
+
+            k_bending += bs.transpose() * d_shear * bs * det_j * weight;
+        }
+
+        Ok(k_bending)
+    }
+
     /// Placeholder for local stiffness matrix
     ///
     /// TODO: Implement membrane + bending + drilling stiffness
@@ -939,6 +1039,123 @@ mod tests {
         assert_eq!(
             near_zero_eigenvalues, 3,
             "Should have 3 near-zero eigenvalues (rigid body modes)"
+        );
+    }
+
+    #[test]
+    fn bending_stiffness_dimensions() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes();
+        let material = make_steel_material();
+
+        let k_bend = shell
+            .bending_stiffness(&nodes, &material)
+            .expect("Should compute bending stiffness");
+
+        assert_eq!(k_bend.nrows(), 12, "Bending stiffness should be 12×12");
+        assert_eq!(k_bend.ncols(), 12, "Bending stiffness should be 12×12");
+    }
+
+    #[test]
+    fn bending_stiffness_symmetric() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes();
+        let material = make_steel_material();
+
+        let k_bend = shell
+            .bending_stiffness(&nodes, &material)
+            .expect("Should compute bending stiffness");
+
+        // Check symmetry
+        for i in 0..12 {
+            for j in 0..12 {
+                let diff = (k_bend[(i, j)] - k_bend[(j, i)]).abs();
+                assert!(
+                    diff < 1e-6,
+                    "Bending stiffness should be symmetric: K[{},{}]={}, K[{},{}]={}",
+                    i,
+                    j,
+                    k_bend[(i, j)],
+                    j,
+                    i,
+                    k_bend[(j, i)]
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn bending_stiffness_thickness_dependence() {
+        let nodes = make_square_plate_nodes();
+        let material = make_steel_material();
+
+        // Note: Mindlin-Reissner formulation includes bending (∝t³) + shear (∝t)
+        // For thin plates, shear dominates, so overall stiffness scales between t and t³
+        let section_thin = ShellSection::new(0.01);
+        let shell_thin = S4::new(1, vec![1, 2, 3, 4], section_thin);
+        let k_thin = shell_thin
+            .bending_stiffness(&nodes, &material)
+            .expect("Should compute bending stiffness");
+
+        let section_thick = ShellSection::new(0.02);
+        let shell_thick = S4::new(2, vec![1, 2, 3, 4], section_thick);
+        let k_thick = shell_thick
+            .bending_stiffness(&nodes, &material)
+            .expect("Should compute bending stiffness");
+
+        // For Mindlin-Reissner: stiffness increases with thickness, bounded by t and t³
+        let ratio_uz = k_thick[(0, 0)] / k_thin[(0, 0)];
+        assert!(
+            ratio_uz >= 2.0 && ratio_uz <= 8.0,
+            "Bending stiffness should increase with thickness, got ratio {}",
+            ratio_uz
+        );
+
+        // Check that thicker plate is stiffer
+        assert!(k_thick[(0, 0)] > k_thin[(0, 0)], "Thicker plate should be stiffer");
+        assert!(k_thick[(1, 1)] > k_thin[(1, 1)], "Thicker plate should be stiffer");
+    }
+
+    #[test]
+    fn bending_stiffness_positive_definite() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes();
+        let material = make_steel_material();
+
+        let k_bend = shell
+            .bending_stiffness(&nodes, &material)
+            .expect("Should compute bending stiffness");
+
+        // Check positive semi-definite
+        // Bending stiffness has 3 rigid body modes (1 translation in z + 2 rotations about x, y)
+        let eigen = k_bend.symmetric_eigen();
+        let eigenvalues = eigen.eigenvalues;
+
+        let mut positive_eigenvalues = 0;
+        let mut near_zero_eigenvalues = 0;
+
+        for &eig in eigenvalues.iter() {
+            if eig > 1e-3 {
+                positive_eigenvalues += 1;
+            } else if eig > -1e-6 {
+                near_zero_eigenvalues += 1;
+            } else {
+                panic!("Found negative eigenvalue: {}", eig);
+            }
+        }
+
+        assert!(
+            positive_eigenvalues >= 9,
+            "Should have at least 9 positive eigenvalues, got {}",
+            positive_eigenvalues
+        );
+        assert!(
+            near_zero_eigenvalues <= 3,
+            "Should have at most 3 near-zero eigenvalues (rigid body modes), got {}",
+            near_zero_eigenvalues
         );
     }
 }
