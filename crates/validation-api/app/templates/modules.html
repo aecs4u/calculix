@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Test Modules - CalculiX Validation{% endblock %}
+
+{% block content %}
+<div class="content-box">
+    <h2>🧪 Test Modules</h2>
+    <p>Overview of all test modules with their pass rates and test counts.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Module</th>
+                <th>Description</th>
+                <th>Tests</th>
+                <th>Passing</th>
+                <th>Pass Rate</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in modules %}
+            <tr>
+                <td><strong>{{ item.module.name }}</strong></td>
+                <td>{{ item.module.description or 'N/A' }}</td>
+                <td>{{ item.test_count }}</td>
+                <td class="status-pass">{{ item.passing }}</td>
+                <td>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ item.pass_rate }}%">
+                            {{ "%.0f"|format(item.pass_rate) }}%
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    {% if item.pass_rate >= 95 %}
+                    <span class="badge success">Excellent</span>
+                    {% elif item.pass_rate >= 80 %}
+                    <span class="badge warning">Good</span>
+                    {% else %}
+                    <span class="badge danger">Needs Attention</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="content-box">
+    <h2>📊 Module Statistics</h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="label">Total Modules</div>
+            <div class="value">{{ modules|length }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Total Tests</div>
+            <div class="value">{{ modules|sum(attribute='test_count') }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Passing Tests</div>
+            <div class="value">{{ modules|sum(attribute='passing') }}</div>
+            <div class="badge success">
+                {{ "%.1f"|format((modules|sum(attribute='passing') / modules|sum(attribute='test_count') * 100) if modules|sum(attribute='test_count') > 0 else 0) }}%
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Examples - CalculiX Validation{% endblock %}
+
+{% block content %}
+<div class="content-box">
+    <h2>📝 Example Problems</h2>
+    <p>Test examples with analytical validation results.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Example</th>
+                <th>Element Type</th>
+                <th>Nodes</th>
+                <th>Elements</th>
+                <th>DOFs</th>
+                <th>Validations</th>
+                <th>Max Error</th>
+                <th>Avg Error</th>
+                <th>Status</th>
+                <th>Last Run</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in examples %}
+            <tr>
+                <td><strong>{{ item.example.name }}</strong></td>
+                <td><code>{{ item.example.element_type or 'N/A' }}</code></td>
+                <td>{{ item.example.num_nodes or 'N/A' }}</td>
+                <td>{{ item.example.num_elements or 'N/A' }}</td>
+                <td>{{ item.example.num_dofs or 'N/A' }}</td>
+                <td>{{ item.num_validations }}</td>
+                <td>
+                    {% if item.max_error_percent > 0 %}
+                    {{ "%.4f"|format(item.max_error_percent) }}%
+                    {% else %}
+                    N/A
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.avg_error_percent > 0 %}
+                    {{ "%.4f"|format(item.avg_error_percent) }}%
+                    {% else %}
+                    N/A
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.all_passed and item.num_validations > 0 %}
+                    <span class="status-pass">✓ PASS</span>
+                    {% elif item.num_validations > 0 %}
+                    <span class="status-fail">✗ FAIL</span>
+                    {% else %}
+                    <span class="timestamp">Not Run</span>
+                    {% endif %}
+                </td>
+                <td class="timestamp">
+                    {{ item.last_run.strftime('%Y-%m-%d %H:%M') if item.last_run else 'N/A' }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="content-box">
+    <h2>📊 Example Statistics</h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="label">Total Examples</div>
+            <div class="value">{{ examples|length }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Validated Examples</div>
+            <div class="value">{{ examples|selectattr('num_validations', 'gt', 0)|list|length }}</div>
+            <div class="badge success">
+                {{ "%.0f"|format((examples|selectattr('num_validations', 'gt', 0)|list|length / examples|length * 100) if examples|length > 0 else 0) }}%
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="label">All Passing</div>
+            <div class="value">{{ examples|selectattr('all_passed')|list|length }}</div>
+            <div class="badge success">High Quality</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Total Validations</div>
+            <div class="value">{{ examples|sum(attribute='num_validations') }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="content-box">
+    <h2>🎯 Validation Accuracy</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Example</th>
+                <th>Description</th>
+                <th>Accuracy</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in examples %}
+            {% if item.num_validations > 0 %}
+            <tr>
+                <td><strong>{{ item.example.name }}</strong></td>
+                <td>{{ item.example.description or 'N/A' }}</td>
+                <td>
+                    {% set accuracy = 100 - item.max_error_percent %}
+                    {% set clamped_accuracy = [0, [accuracy, 100]|min]|max %}
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ clamped_accuracy }}%">
+                            {{ "%.2f"|format([0, accuracy]|max) }}% accurate
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

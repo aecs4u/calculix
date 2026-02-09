@@ -1,0 +1,124 @@
+name: Validation Report
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  generate-report:
+    name: Generate Validation Report
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run tests
+        run: cargo test --workspace
+
+      - name: Export test results
+        working-directory: crates/validation-api
+        run: python3 scripts/export_test_results.py
+
+      - name: Generate HTML report
+        working-directory: crates/validation-api
+        run: python3 scripts/generate_html_report.py
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: crates/validation-api/test_results.json
+
+      - name: Upload validation report
+        uses: actions/upload-artifact@v3
+        with:
+          name: validation-report
+          path: crates/validation-api/validation_report.html
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const results = JSON.parse(
+              fs.readFileSync('crates/validation-api/test_results.json', 'utf8')
+            );
+
+            const body = `## 🦀 CalculiX Rust Solver Validation Report
+
+            ### Summary
+            - **Total Tests:** ${results.summary.total_tests}
+            - **Passing:** ${results.summary.passing_tests} ✅
+            - **Failing:** ${results.summary.failing_tests} ❌
+            - **Pass Rate:** ${results.summary.pass_rate.toFixed(1)}%
+            - **Lines of Code:** ${results.lines_of_code.toLocaleString()}
+            - **Git Commit:** \`${results.git_commit}\`
+
+            ### Test Modules
+            ${results.modules.map(m =>
+              `- **${m.name}:** ${m.passing}/${m.tests} passing`
+            ).join('\n')}
+
+            ### Examples
+            ${results.examples.map(e =>
+              `- **${e.name}:** ${e.validations.length} validations`
+            ).join('\n')}
+
+            ---
+            📊 [Download full report](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: Deploy report to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./crates/validation-api
+          publish_branch: gh-pages
+          destination_dir: validation
+          keep_files: false
+          enable_jekyll: false
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Update validation report'

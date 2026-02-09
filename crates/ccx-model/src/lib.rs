@@ -120,5 +120,40 @@ mod tests {
         assert!(s.has_static);
         assert_eq!(s.include_files, vec!["mesh.msh".to_string()]);
     }
-}
 
+    #[test]
+    fn normalizes_spaced_and_underscored_keywords() {
+        let src = r#"
+*STEP
+*HEAT_TRANSFER
+*END STEP
+"#;
+        let deck = Deck::parse_str(src).expect("parse should succeed");
+        let s = ModelSummary::from_deck(&deck);
+        assert!(s.has_step);
+        assert!(s.has_heat_transfer);
+    }
+
+    #[test]
+    fn aggregates_keyword_counts_and_totals() {
+        let src = r#"
+*NODE
+1,0,0,0
+2,1,0,0
+*NODE
+3,2,0,0
+*ELEMENT
+1,1,2,3,4
+*MATERIAL,NAME=MAT1
+*MATERIAL,NAME=MAT2
+"#;
+        let deck = Deck::parse_str(src).expect("parse should succeed");
+        let s = ModelSummary::from_deck(&deck);
+        assert_eq!(s.keyword_counts.get("NODE"), Some(&2usize));
+        assert_eq!(s.material_defs, 2);
+        assert_eq!(s.node_rows, 3);
+        assert_eq!(s.element_rows, 1);
+        assert_eq!(s.total_cards, 5);
+        assert_eq!(s.total_data_lines, 4);
+    }
+}

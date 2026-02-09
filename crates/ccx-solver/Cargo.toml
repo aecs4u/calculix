@@ -1,0 +1,14 @@
+[package]
+name = "ccx-solver"
+version = "0.1.0"
+edition = "2024"
+build = "build.rs"
+
+[dependencies]
+ccx-inp = { path = "../ccx-inp" }
+ccx-model = { path = "../ccx-model" }
+nalgebra = { version = "0.33", features = ["sparse"] }
+
+[[bin]]
+name = "ccx-solver"
+path = "src/main.rs"

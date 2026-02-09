@@ -1,0 +1,151 @@
+/// Element factory for creating element instances from mesh data
+///
+/// This module provides factory functions to create appropriate element implementations
+/// based on element type, handling the conversion from mesh::Element to typed elements.
+
+use crate::elements::{Beam31, BeamSection, Element, Truss2D};
+use crate::materials::Material;
+use crate::mesh::{ElementType, Node};
+use nalgebra::DMatrix;
+
+/// Dynamic element wrapper that can hold any element type
+///
+/// This allows us to work with different element types polymorphically
+/// during assembly without knowing the concrete type at compile time.
+pub enum DynamicElement {
+    Truss(Truss2D),
+    Beam(Beam31),
+}
+
+impl DynamicElement {
+    /// Create a dynamic element from mesh element data
+    ///
+    /// # Arguments
+    /// * `elem_type` - The element type from the mesh
+    /// * `elem_id` - Element ID
+    /// * `nodes` - Node connectivity
+    /// * `default_area` - Default cross-sectional area (for truss/beam)
+    ///
+    /// # Returns
+    /// A dynamic element wrapper, or None if the element type is not yet supported
+    pub fn from_mesh_element(
+        elem_type: ElementType,
+        elem_id: i32,
+        nodes: Vec<i32>,
+        default_area: f64,
+    ) -> Option<Self> {
+        match elem_type {
+            ElementType::T3D2 => {
+                let truss = Truss2D::new(elem_id, nodes, default_area);
+                Some(DynamicElement::Truss(truss))
+            }
+            ElementType::B31 => {
+                // For now, use circular section with area-equivalent radius
+                let radius = (default_area / std::f64::consts::PI).sqrt();
+                let section = BeamSection::circular(radius);
+                let beam = Beam31::new(elem_id, nodes[0], nodes[1], section);
+                Some(DynamicElement::Beam(beam))
+            }
+            _ => None, // Unsupported element type
+        }
+    }
+
+    /// Compute stiffness matrix for this element
+    pub fn stiffness_matrix(
+        &self,
+        nodes: &[Node],
+        material: &Material,
+    ) -> Result<DMatrix<f64>, String> {
+        match self {
+            DynamicElement::Truss(truss) => truss.stiffness_matrix(nodes, material),
+            DynamicElement::Beam(beam) => beam.stiffness_matrix(nodes, material),
+        }
+    }
+
+    /// Get global DOF indices for this element
+    ///
+    /// # Arguments
+    /// * `connectivity` - Node IDs for this element
+    /// * `max_dofs_per_node` - Maximum DOFs per node in the global system
+    ///
+    /// # Returns
+    /// Vector of global DOF indices for this element
+    pub fn global_dof_indices(&self, connectivity: &[i32], max_dofs_per_node: usize) -> Vec<usize> {
+        let dofs_per_node = match self {
+            DynamicElement::Truss(t) => t.dofs_per_node(),
+            DynamicElement::Beam(b) => b.dofs_per_node(),
+        };
+
+        let mut indices = Vec::new();
+        for &node_id in connectivity {
+            let base_dof = ((node_id - 1) as usize) * max_dofs_per_node;
+            for local_dof in 0..dofs_per_node {
+                indices.push(base_dof + local_dof);
+            }
+        }
+        indices
+    }
+
+    /// Get the element type
+    pub fn element_type(&self) -> ElementType {
+        match self {
+            DynamicElement::Truss(_) => ElementType::T3D2,
+            DynamicElement::Beam(_) => ElementType::B31,
+        }
+    }
+
+    /// Get number of DOFs for this element
+    pub fn num_dofs(&self) -> usize {
+        match self {
+            DynamicElement::Truss(truss) => truss.num_nodes() * truss.dofs_per_node(),
+            DynamicElement::Beam(beam) => beam.num_nodes() * beam.dofs_per_node(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_truss_element() {
+        let elem = DynamicElement::from_mesh_element(
+            ElementType::T3D2,
+            1,
+            vec![0, 1],
+            0.01,
+        );
+
+        assert!(elem.is_some());
+        let elem = elem.unwrap();
+        assert_eq!(elem.element_type(), ElementType::T3D2);
+        assert_eq!(elem.num_dofs(), 6); // 2 nodes × 3 DOFs
+    }
+
+    #[test]
+    fn test_create_beam_element() {
+        let elem = DynamicElement::from_mesh_element(
+            ElementType::B31,
+            1,
+            vec![0, 1],
+            0.01,
+        );
+
+        assert!(elem.is_some());
+        let elem = elem.unwrap();
+        assert_eq!(elem.element_type(), ElementType::B31);
+        assert_eq!(elem.num_dofs(), 12); // 2 nodes × 6 DOFs
+    }
+
+    #[test]
+    fn test_unsupported_element_type() {
+        let elem = DynamicElement::from_mesh_element(
+            ElementType::C3D8,
+            1,
+            vec![0, 1, 2, 3, 4, 5, 6, 7],
+            0.01,
+        );
+
+        assert!(elem.is_none());
+    }
+}

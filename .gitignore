@@ -50,6 +50,9 @@ build/coverage/
 
 # Rust build artifacts
 target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
 
 # Python packaging artifacts
 *.egg-info/

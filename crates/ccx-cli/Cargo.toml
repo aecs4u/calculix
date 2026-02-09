@@ -4,10 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+calculix_gui = { path = "../calculix_gui" }
+ccx-solver = { path = "../ccx-solver" }
 ccx-inp = { path = "../ccx-inp" }
 ccx-model = { path = "../ccx-model" }
+ccx-io = { path = "../ccx-io" }
 
 [[bin]]
 name = "ccx-cli"
 path = "src/main.rs"
-
