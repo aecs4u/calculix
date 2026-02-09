@@ -1,0 +1,580 @@
+{% extends "base.html" %}
+
+{% block title %}Feature Comparison - CalculiX Validation{% endblock %}
+
+{% block extra_css %}
+<style>
+    .legend {
+        display: flex;
+        gap: 20px;
+        margin: 20px 0;
+        flex-wrap: wrap;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .legend-symbol {
+        font-size: 1.5em;
+    }
+    .comparison-table {
+        width: 100%;
+        font-size: 0.9em;
+    }
+    .comparison-table th {
+        position: sticky;
+        top: 0;
+        background: #f8f9fa;
+        z-index: 10;
+    }
+    .comparison-table td {
+        text-align: center;
+    }
+    .comparison-table td:first-child,
+    .comparison-table th:first-child {
+        text-align: left;
+        font-weight: 600;
+    }
+    .category-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-weight: bold;
+        text-align: left !important;
+        padding: 15px 12px !important;
+    }
+    .subcategory-header {
+        background: #e9ecef;
+        font-weight: 600;
+        text-align: left !important;
+        padding: 10px 12px !important;
+    }
+    .filter-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    .filter-tab {
+        padding: 10px 20px;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 500;
+    }
+    .filter-tab:hover {
+        border-color: #667eea;
+    }
+    .filter-tab.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: #667eea;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- KPI Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="label">Completed Features</div>
+        <div class="value">7</div>
+        <div class="badge success">✅ Implemented</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">In Progress</div>
+        <div class="value">3</div>
+        <div class="badge warning">🚧 Active Development</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Planned Features</div>
+        <div class="value">45+</div>
+        <div class="badge success">📋 Roadmap</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Total Element Types</div>
+        <div class="value">55+</div>
+        <div class="badge success">Tracked</div>
+    </div>
+</div>
+
+<div class="content-box">
+    <h2>🔬 CalculiX Rust Solver - Feature Comparison</h2>
+    <p>Comprehensive comparison of ccx-solver capabilities versus CalculiX, Abaqus, MSC.Nastran, and NASTRAN-95</p>
+
+    <!-- Legend -->
+    <div class="legend">
+        <div class="legend-item">
+            <span class="legend-symbol">✅</span>
+            <span>Fully implemented</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-symbol">🚧</span>
+            <span>In progress</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-symbol">📋</span>
+            <span>Planned</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-symbol">❌</span>
+            <span>Not planned</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-symbol">🔍</span>
+            <span>Under investigation</span>
+        </div>
+    </div>
+
+    <!-- Category Filters -->
+    <div class="filter-tabs">
+        <button class="filter-tab active" onclick="filterCategory('all')">All Features</button>
+        <button class="filter-tab" onclick="filterCategory('elements')">Element Library</button>
+        <button class="filter-tab" onclick="filterCategory('analysis')">Analysis Types</button>
+        <button class="filter-tab" onclick="filterCategory('materials')">Materials</button>
+        <button class="filter-tab" onclick="filterCategory('solvers')">Solvers</button>
+        <button class="filter-tab" onclick="filterCategory('io')">Input/Output</button>
+        <button class="filter-tab" onclick="filterCategory('advanced')">Advanced Features</button>
+    </div>
+
+    <!-- Comparison Table -->
+    <div style="overflow-x: auto;">
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th style="min-width: 250px;">Feature</th>
+                    <th>ccx-solver</th>
+                    <th>CalculiX</th>
+                    <th>Abaqus</th>
+                    <th>MSC.Nastran</th>
+                    <th>NASTRAN-95</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- ELEMENT LIBRARY -->
+                <tr data-category="elements">
+                    <td colspan="6" class="category-header">🔩 Element Library</td>
+                </tr>
+                <tr data-category="elements">
+                    <td colspan="6" class="subcategory-header">Truss/Rod Elements</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>T3D2 - 2-node 3D truss</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>CROD - 2-node axial rod</td>
+                    <td>📋</td>
+                    <td>-</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                </tr>
+                <tr data-category="elements">
+                    <td colspan="6" class="subcategory-header">Beam Elements</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>B31 - 2-node Euler-Bernoulli beam</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>B32 - 3-node beam</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>CBEAM - General beam element</td>
+                    <td>📋</td>
+                    <td>-</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                </tr>
+                <tr data-category="elements">
+                    <td colspan="6" class="subcategory-header">Shell Elements</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>S4 - 4-node shell</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>S8 - 8-node shell</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>CQUAD4 - 4-node quadrilateral shell</td>
+                    <td>📋</td>
+                    <td>-</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                </tr>
+                <tr data-category="elements">
+                    <td colspan="6" class="subcategory-header">Solid Elements</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>C3D8 - 8-node hexahedron</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>C3D20 - 20-node hexahedron</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>CHEXA - 8-node hexahedron</td>
+                    <td>📋</td>
+                    <td>-</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                </tr>
+
+                <!-- ANALYSIS TYPES -->
+                <tr data-category="analysis">
+                    <td colspan="6" class="category-header">📊 Analysis Types</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td colspan="6" class="subcategory-header">Static Analysis</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Linear static</td>
+                    <td>🚧</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Nonlinear static (geometric)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Contact analysis</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td colspan="6" class="subcategory-header">Dynamic Analysis</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Modal (eigenvalue)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Transient dynamic</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td colspan="6" class="subcategory-header">Thermal Analysis</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Steady-state heat transfer</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Coupled thermo-mechanical</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                </tr>
+
+                <!-- MATERIALS -->
+                <tr data-category="materials">
+                    <td colspan="6" class="category-header">🧪 Material Models</td>
+                </tr>
+                <tr data-category="materials">
+                    <td>Isotropic elastic</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                </tr>
+                <tr data-category="materials">
+                    <td>Orthotropic elastic</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                </tr>
+                <tr data-category="materials">
+                    <td>Elastoplastic (von Mises)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                </tr>
+                <tr data-category="materials">
+                    <td>Hyperelastic (Neo-Hookean)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                </tr>
+
+                <!-- SOLVERS -->
+                <tr data-category="solvers">
+                    <td colspan="6" class="category-header">⚙️ Solution Methods</td>
+                </tr>
+                <tr data-category="solvers">
+                    <td colspan="6" class="subcategory-header">Linear Solvers</td>
+                </tr>
+                <tr data-category="solvers">
+                    <td>Direct (LU decomposition)</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                </tr>
+                <tr data-category="solvers">
+                    <td>Iterative (Conjugate Gradient)</td>
+                    <td>🚧</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                </tr>
+                <tr data-category="solvers">
+                    <td>Iterative (GMRES)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                </tr>
+                <tr data-category="solvers">
+                    <td colspan="6" class="subcategory-header">Matrix Storage</td>
+                </tr>
+                <tr data-category="solvers">
+                    <td>Dense format</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                </tr>
+                <tr data-category="solvers">
+                    <td>Sparse (CSR format)</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                </tr>
+
+                <!-- INPUT/OUTPUT -->
+                <tr data-category="io">
+                    <td colspan="6" class="category-header">💾 Input/Output Formats</td>
+                </tr>
+                <tr data-category="io">
+                    <td colspan="6" class="subcategory-header">Input Formats</td>
+                </tr>
+                <tr data-category="io">
+                    <td>CalculiX INP</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                </tr>
+                <tr data-category="io">
+                    <td>Abaqus INP</td>
+                    <td>🚧</td>
+                    <td>🚧</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                </tr>
+                <tr data-category="io">
+                    <td>Nastran BDF</td>
+                    <td>📋</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                </tr>
+                <tr data-category="io">
+                    <td colspan="6" class="subcategory-header">Output Formats</td>
+                </tr>
+                <tr data-category="io">
+                    <td>FRD (results)</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                </tr>
+                <tr data-category="io">
+                    <td>VTK/VTU (ParaView)</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                </tr>
+                <tr data-category="io">
+                    <td>DAT (text results)</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                </tr>
+
+                <!-- ADVANCED FEATURES -->
+                <tr data-category="advanced">
+                    <td colspan="6" class="category-header">🚀 Advanced Features</td>
+                </tr>
+                <tr data-category="advanced">
+                    <td>Multi-threading</td>
+                    <td>🔍</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                </tr>
+                <tr data-category="advanced">
+                    <td>GPU acceleration</td>
+                    <td>🔍</td>
+                    <td>❌</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                </tr>
+                <tr data-category="advanced">
+                    <td>Python scripting/API</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                </tr>
+                <tr data-category="advanced">
+                    <td>Restart capability</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Implementation Roadmap -->
+<div class="content-box">
+    <h2>📅 Implementation Roadmap</h2>
+    
+    <h3>✅ Completed (Current Status)</h3>
+    <ul>
+        <li><strong>Elements:</strong> T3D2 (truss), B31 (beam)</li>
+        <li><strong>Analysis:</strong> Linear static (partial implementation)</li>
+        <li><strong>Materials:</strong> Isotropic elastic</li>
+        <li><strong>Solvers:</strong> Dense direct (LU), Sparse CSR with penalty method</li>
+        <li><strong>I/O:</strong> INP parser (99.6% success on 1,133 examples), FRD/DAT writer, VTK/VTU export</li>
+        <li><strong>Infrastructure:</strong> Rust library, Python bindings, FastAPI validation dashboard</li>
+    </ul>
+
+    <h3>🚧 In Progress</h3>
+    <ul>
+        <li>Linear static analysis (full validation)</li>
+        <li>Sparse iterative solvers (Conjugate Gradient)</li>
+        <li>Abaqus INP compatibility improvements</li>
+    </ul>
+
+    <h3>📋 High Priority (Next 3-6 months)</h3>
+    <ol>
+        <li><strong>Elements:</strong> S4 shell, C3D8 hexahedron</li>
+        <li><strong>Analysis:</strong> Modal analysis (eigenvalues)</li>
+        <li><strong>Loads:</strong> Distributed loads, pressure</li>
+        <li><strong>Solvers:</strong> GMRES, preconditioners</li>
+        <li><strong>Materials:</strong> Orthotropic elastic</li>
+        <li><strong>Validation:</strong> Run solver on all 1,133 example files</li>
+    </ol>
+
+    <h3>📋 Medium Priority (6-12 months)</h3>
+    <ul>
+        <li>Nonlinear geometry (large displacement)</li>
+        <li>Plasticity (von Mises yield criterion)</li>
+        <li>Thermal analysis</li>
+        <li>Frequency response</li>
+        <li>Additional element types (C3D4, C3D6, S3, S6, S8)</li>
+    </ul>
+</div>
+
+<script>
+function filterCategory(category) {
+    const rows = document.querySelectorAll('.comparison-table tbody tr');
+    const tabs = document.querySelectorAll('.filter-tab');
+    
+    // Update active tab
+    tabs.forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // Show/hide rows
+    rows.forEach(row => {
+        if (category === 'all') {
+            row.style.display = '';
+        } else {
+            const rowCategory = row.getAttribute('data-category');
+            row.style.display = rowCategory === category ? '' : 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

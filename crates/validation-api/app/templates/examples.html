@@ -3,11 +3,75 @@
 {% block title %}Examples - CalculiX Validation{% endblock %}
 
 {% block content %}
+<!-- KPI Cards at Top -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="label">Total Examples</div>
+        <div class="value">{{ examples|length }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Validated Examples</div>
+        <div class="value">{{ examples|selectattr('num_validations', 'gt', 0)|list|length }}</div>
+        <div class="badge success">
+            {{ "%.0f"|format((examples|selectattr('num_validations', 'gt', 0)|list|length / examples|length * 100) if examples|length > 0 else 0) }}%
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="label">All Passing</div>
+        <div class="value">{{ examples|selectattr('all_passed')|list|length }}</div>
+        <div class="badge success">High Quality</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Total Validations</div>
+        <div class="value">{{ examples|sum(attribute='num_validations') }}</div>
+    </div>
+</div>
+
+<!-- Main Content -->
 <div class="content-box">
     <h2>📝 Example Problems</h2>
     <p>Test examples with analytical validation results.</p>
 
-    <table>
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label for="searchExample">Search Example</label>
+            <input type="text" id="searchExample" class="filter-input" placeholder="Filter by example name...">
+        </div>
+        <div class="filter-group">
+            <label for="filterElementType">Element Type</label>
+            <select id="filterElementType" class="filter-select">
+                <option value="">All Element Types</option>
+                {% for item in examples %}
+                {% if item.example.element_type %}
+                <option value="{{ item.example.element_type }}">{{ item.example.element_type }}</option>
+                {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="filterValidation">Validation Status</label>
+            <select id="filterValidation" class="filter-select">
+                <option value="">All Statuses</option>
+                <option value="passed">Passed</option>
+                <option value="failed">Failed</option>
+                <option value="not-run">Not Run</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="sortByExample">Sort By</label>
+            <select id="sortByExample" class="filter-select">
+                <option value="name">Example Name</option>
+                <option value="nodes-desc">Nodes (High to Low)</option>
+                <option value="elements-desc">Elements (High to Low)</option>
+                <option value="error-asc">Max Error (Low to High)</option>
+                <option value="error-desc">Max Error (High to Low)</option>
+            </select>
+        </div>
+        <button class="filter-reset" onclick="resetExampleFilters()">Reset</button>
+    </div>
+
+    <table id="examplesTable">
         <thead>
             <tr>
                 <th>Example</th>
@@ -24,7 +88,12 @@
         </thead>
         <tbody>
             {% for item in examples %}
-            <tr>
+            <tr data-example="{{ item.example.name|lower }}"
+                data-element-type="{{ item.example.element_type or '' }}"
+                data-nodes="{{ item.example.num_nodes or 0 }}"
+                data-elements="{{ item.example.num_elements or 0 }}"
+                data-max-error="{{ item.max_error_percent }}"
+                data-validation-status="{% if item.all_passed and item.num_validations > 0 %}passed{% elif item.num_validations > 0 %}failed{% else %}not-run{% endif %}">
                 <td><strong>{{ item.example.name }}</strong></td>
                 <td><code>{{ item.example.element_type or 'N/A' }}</code></td>
                 <td>{{ item.example.num_nodes or 'N/A' }}</td>
@@ -63,61 +132,86 @@
     </table>
 </div>
 
-<div class="content-box">
-    <h2>📊 Example Statistics</h2>
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="label">Total Examples</div>
-            <div class="value">{{ examples|length }}</div>
-        </div>
-        <div class="stat-card">
-            <div class="label">Validated Examples</div>
-            <div class="value">{{ examples|selectattr('num_validations', 'gt', 0)|list|length }}</div>
-            <div class="badge success">
-                {{ "%.0f"|format((examples|selectattr('num_validations', 'gt', 0)|list|length / examples|length * 100) if examples|length > 0 else 0) }}%
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="label">All Passing</div>
-            <div class="value">{{ examples|selectattr('all_passed')|list|length }}</div>
-            <div class="badge success">High Quality</div>
-        </div>
-        <div class="stat-card">
-            <div class="label">Total Validations</div>
-            <div class="value">{{ examples|sum(attribute='num_validations') }}</div>
-        </div>
-    </div>
-</div>
+<script>
+// Filter and sort functionality for examples
+const searchExampleInput = document.getElementById('searchExample');
+const elementTypeFilter = document.getElementById('filterElementType');
+const validationFilter = document.getElementById('filterValidation');
+const sortExampleSelect = document.getElementById('sortByExample');
+const examplesTableBody = document.querySelector('#examplesTable tbody');
 
-<div class="content-box">
-    <h2>🎯 Validation Accuracy</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Example</th>
-                <th>Description</th>
-                <th>Accuracy</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in examples %}
-            {% if item.num_validations > 0 %}
-            <tr>
-                <td><strong>{{ item.example.name }}</strong></td>
-                <td>{{ item.example.description or 'N/A' }}</td>
-                <td>
-                    {% set accuracy = 100 - item.max_error_percent %}
-                    {% set clamped_accuracy = [0, [accuracy, 100]|min]|max %}
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: {{ clamped_accuracy }}%">
-                            {{ "%.2f"|format([0, accuracy]|max) }}% accurate
-                        </div>
-                    </div>
-                </td>
-            </tr>
-            {% endif %}
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+// Remove duplicate element types from dropdown
+(function() {
+    const select = elementTypeFilter;
+    const seen = new Set();
+    const options = Array.from(select.options);
+    options.forEach((option, index) => {
+        if (index === 0) return; // Keep "All Element Types"
+        if (seen.has(option.value) || !option.value) {
+            option.remove();
+        } else {
+            seen.add(option.value);
+        }
+    });
+})();
+
+function applyExampleFilters() {
+    const searchTerm = searchExampleInput.value.toLowerCase();
+    const elementType = elementTypeFilter.value;
+    const validationStatus = validationFilter.value;
+    const rows = Array.from(examplesTableBody.querySelectorAll('tr'));
+
+    // Filter rows
+    rows.forEach(row => {
+        const exampleName = row.dataset.example;
+        const rowElementType = row.dataset.elementType;
+        const rowStatus = row.dataset.validationStatus;
+
+        const matchesSearch = exampleName.includes(searchTerm);
+        const matchesElementType = !elementType || rowElementType === elementType;
+        const matchesStatus = !validationStatus || rowStatus === validationStatus;
+
+        row.style.display = matchesSearch && matchesElementType && matchesStatus ? '' : 'none';
+    });
+
+    // Apply sorting
+    applySortingExamples();
+}
+
+function applySortingExamples() {
+    const sortValue = sortExampleSelect.value;
+    const rows = Array.from(examplesTableBody.querySelectorAll('tr'));
+
+    rows.sort((a, b) => {
+        switch(sortValue) {
+            case 'nodes-desc':
+                return parseInt(b.dataset.nodes) - parseInt(a.dataset.nodes);
+            case 'elements-desc':
+                return parseInt(b.dataset.elements) - parseInt(a.dataset.elements);
+            case 'error-asc':
+                return parseFloat(a.dataset.maxError) - parseFloat(b.dataset.maxError);
+            case 'error-desc':
+                return parseFloat(b.dataset.maxError) - parseFloat(a.dataset.maxError);
+            case 'name':
+            default:
+                return a.dataset.example.localeCompare(b.dataset.example);
+        }
+    });
+
+    rows.forEach(row => examplesTableBody.appendChild(row));
+}
+
+function resetExampleFilters() {
+    searchExampleInput.value = '';
+    elementTypeFilter.value = '';
+    validationFilter.value = '';
+    sortExampleSelect.value = 'name';
+    applyExampleFilters();
+}
+
+searchExampleInput.addEventListener('input', applyExampleFilters);
+elementTypeFilter.addEventListener('change', applyExampleFilters);
+validationFilter.addEventListener('change', applyExampleFilters);
+sortExampleSelect.addEventListener('change', applySortingExamples);
+</script>
 {% endblock %}

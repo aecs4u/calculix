@@ -205,6 +205,12 @@ async def examples_page(request: Request, db: Session = Depends(get_db)):
     )
 
 
+@app.get("/features", response_class=HTMLResponse)
+async def features_page(request: Request):
+    """Feature comparison page."""
+    return templates.TemplateResponse("features.html", {"request": request})
+
+
 # ============================================================================
 # API Endpoints - Test Modules
 # ============================================================================

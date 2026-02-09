@@ -3,11 +3,71 @@
 {% block title %}Test Modules - CalculiX Validation{% endblock %}
 
 {% block content %}
+<!-- KPI Cards at Top -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="label">Total Modules</div>
+        <div class="value">{{ modules|length }}</div>
+        <div class="badge success">Active</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Total Tests</div>
+        <div class="value">{{ modules|sum(attribute='test_count') }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Passing Tests</div>
+        <div class="value">{{ modules|sum(attribute='passing') }}</div>
+        <div class="badge success">
+            {{ "%.1f"|format((modules|sum(attribute='passing') / modules|sum(attribute='test_count') * 100) if modules|sum(attribute='test_count') > 0 else 0) }}%
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Overall Pass Rate</div>
+        <div class="value">
+            {{ "%.1f"|format((modules|sum(attribute='passing') / modules|sum(attribute='test_count') * 100) if modules|sum(attribute='test_count') > 0 else 0) }}%
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: {{ (modules|sum(attribute='passing') / modules|sum(attribute='test_count') * 100) if modules|sum(attribute='test_count') > 0 else 0 }}%">
+                {{ "%.0f"|format((modules|sum(attribute='passing') / modules|sum(attribute='test_count') * 100) if modules|sum(attribute='test_count') > 0 else 0) }}%
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
 <div class="content-box">
     <h2>🧪 Test Modules</h2>
     <p>Overview of all test modules with their pass rates and test counts.</p>
 
-    <table>
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label for="searchModule">Search Module</label>
+            <input type="text" id="searchModule" class="filter-input" placeholder="Filter by module name...">
+        </div>
+        <div class="filter-group">
+            <label for="filterStatus">Status</label>
+            <select id="filterStatus" class="filter-select">
+                <option value="">All Statuses</option>
+                <option value="excellent">Excellent (≥95%)</option>
+                <option value="good">Good (≥80%)</option>
+                <option value="needs-attention">Needs Attention (&lt;80%)</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="sortBy">Sort By</label>
+            <select id="sortBy" class="filter-select">
+                <option value="name">Module Name</option>
+                <option value="tests-desc">Tests (High to Low)</option>
+                <option value="tests-asc">Tests (Low to High)</option>
+                <option value="pass-rate-desc">Pass Rate (High to Low)</option>
+                <option value="pass-rate-asc">Pass Rate (Low to High)</option>
+            </select>
+        </div>
+        <button class="filter-reset" onclick="resetFilters()">Reset</button>
+    </div>
+
+    <table id="modulesTable">
         <thead>
             <tr>
                 <th>Module</th>
@@ -20,7 +80,10 @@
         </thead>
         <tbody>
             {% for item in modules %}
-            <tr>
+            <tr data-module="{{ item.module.name|lower }}"
+                data-pass-rate="{{ item.pass_rate }}"
+                data-test-count="{{ item.test_count }}"
+                data-status="{% if item.pass_rate >= 95 %}excellent{% elif item.pass_rate >= 80 %}good{% else %}needs-attention{% endif %}">
                 <td><strong>{{ item.module.name }}</strong></td>
                 <td>{{ item.module.description or 'N/A' }}</td>
                 <td>{{ item.test_count }}</td>
@@ -47,24 +110,65 @@
     </table>
 </div>
 
-<div class="content-box">
-    <h2>📊 Module Statistics</h2>
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="label">Total Modules</div>
-            <div class="value">{{ modules|length }}</div>
-        </div>
-        <div class="stat-card">
-            <div class="label">Total Tests</div>
-            <div class="value">{{ modules|sum(attribute='test_count') }}</div>
-        </div>
-        <div class="stat-card">
-            <div class="label">Passing Tests</div>
-            <div class="value">{{ modules|sum(attribute='passing') }}</div>
-            <div class="badge success">
-                {{ "%.1f"|format((modules|sum(attribute='passing') / modules|sum(attribute='test_count') * 100) if modules|sum(attribute='test_count') > 0 else 0) }}%
-            </div>
-        </div>
-    </div>
-</div>
+<script>
+// Filter and sort functionality
+const searchInput = document.getElementById('searchModule');
+const statusFilter = document.getElementById('filterStatus');
+const sortSelect = document.getElementById('sortBy');
+const tableBody = document.querySelector('#modulesTable tbody');
+
+function applyFilters() {
+    const searchTerm = searchInput.value.toLowerCase();
+    const statusValue = statusFilter.value;
+    const rows = Array.from(tableBody.querySelectorAll('tr'));
+
+    // Filter rows
+    rows.forEach(row => {
+        const moduleName = row.dataset.module;
+        const status = row.dataset.status;
+
+        const matchesSearch = moduleName.includes(searchTerm);
+        const matchesStatus = !statusValue || status === statusValue;
+
+        row.style.display = matchesSearch && matchesStatus ? '' : 'none';
+    });
+
+    // Apply sorting
+    applySorting();
+}
+
+function applySorting() {
+    const sortValue = sortSelect.value;
+    const rows = Array.from(tableBody.querySelectorAll('tr'));
+
+    rows.sort((a, b) => {
+        switch(sortValue) {
+            case 'tests-desc':
+                return parseInt(b.dataset.testCount) - parseInt(a.dataset.testCount);
+            case 'tests-asc':
+                return parseInt(a.dataset.testCount) - parseInt(b.dataset.testCount);
+            case 'pass-rate-desc':
+                return parseFloat(b.dataset.passRate) - parseFloat(a.dataset.passRate);
+            case 'pass-rate-asc':
+                return parseFloat(a.dataset.passRate) - parseFloat(b.dataset.passRate);
+            case 'name':
+            default:
+                return a.dataset.module.localeCompare(b.dataset.module);
+        }
+    });
+
+    rows.forEach(row => tableBody.appendChild(row));
+}
+
+function resetFilters() {
+    searchInput.value = '';
+    statusFilter.value = '';
+    sortSelect.value = 'name';
+    applyFilters();
+}
+
+searchInput.addEventListener('input', applyFilters);
+statusFilter.addEventListener('change', applyFilters);
+sortSelect.addEventListener('change', applySorting);
+</script>
 {% endblock %}

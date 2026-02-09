@@ -183,6 +183,70 @@
             border-radius: 3px;
             font-family: 'Courier New', monospace;
         }
+        .filter-bar {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .filter-group label {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #495057;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .filter-input {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 0.95em;
+            transition: border-color 0.3s;
+            min-width: 200px;
+        }
+        .filter-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 0.95em;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+            min-width: 150px;
+        }
+        .filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .filter-reset {
+            padding: 8px 20px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: auto;
+        }
+        .filter-reset:hover {
+            background: #5a6268;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -200,6 +264,7 @@
                 <li><a href="/" class="{% if request.url.path == '/' %}active{% endif %}">Dashboard</a></li>
                 <li><a href="/modules" class="{% if request.url.path == '/modules' %}active{% endif %}">Test Modules</a></li>
                 <li><a href="/examples" class="{% if request.url.path == '/examples' %}active{% endif %}">Examples</a></li>
+                <li><a href="/features" class="{% if request.url.path == '/features' %}active{% endif %}">Features</a></li>
                 <li><a href="/docs" target="_blank">API Docs</a></li>
             </ul>
         </div>
