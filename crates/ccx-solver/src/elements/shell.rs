@@ -456,16 +456,136 @@ impl S4 {
         Ok(k_bending)
     }
 
-    /// Placeholder for local stiffness matrix
+    /// Compute drilling stiffness (rotation about surface normal)
     ///
-    /// TODO: Implement membrane + bending + drilling stiffness
+    /// Adds artificial stiffness to prevent spurious rotation modes
+    /// Returns 4×4 matrix for θz DOFs: [θz1, θz2, θz3, θz4]
+    fn drilling_stiffness(
+        &self,
+        nodes: &[Node],
+        material: &Material,
+    ) -> Result<nalgebra::SMatrix<f64, 4, 4>, String> {
+        if nodes.len() != 4 {
+            return Err(format!(
+                "Expected 4 nodes for drilling stiffness, got {}",
+                nodes.len()
+            ));
+        }
+
+        // Get material properties
+        let e = material
+            .elastic_modulus
+            .ok_or_else(|| "Material missing elastic modulus".to_string())?;
+        let nu = material
+            .poissons_ratio
+            .ok_or_else(|| "Material missing Poisson's ratio".to_string())?;
+
+        let t = self.section.thickness;
+        let area = self.element_area(nodes)?;
+
+        // Drilling stiffness magnitude: typically ~1% of bending stiffness
+        // α = 0.01 * E*t³/(12(1-ν²)) * area
+        let alpha = 0.01 * e * t * t * t / (12.0 * (1.0 - nu * nu)) * area;
+
+        // 2×2 Gauss quadrature
+        let gp = 1.0 / f64::sqrt(3.0);
+        let gauss_points = [(-gp, -gp), (gp, -gp), (gp, gp), (-gp, gp)];
+        let weights = [1.0, 1.0, 1.0, 1.0];
+
+        let mut k_drilling = nalgebra::SMatrix::<f64, 4, 4>::zeros();
+
+        for (gp_idx, &(xi, eta)) in gauss_points.iter().enumerate() {
+            let weight = weights[gp_idx];
+            let (_j, _j_inv, det_j) = self.jacobian(nodes, xi, eta)?;
+            let (dn_dxi, dn_deta) = Self::shape_function_derivatives(xi, eta);
+
+            // Build drilling strain-displacement matrix (1×4)
+            // Simple formulation: strain = sum of rotation derivatives
+            let mut bd = nalgebra::SMatrix::<f64, 1, 4>::zeros();
+            for i in 0..4 {
+                bd[(0, i)] = dn_dxi[i] + dn_deta[i];
+            }
+
+            // K += α * Bd^T * Bd * det(J) * weight
+            k_drilling += alpha * bd.transpose() * bd * det_j * weight;
+        }
+
+        Ok(k_drilling)
+    }
+
+    /// Compute full local stiffness matrix (membrane + bending + drilling)
+    ///
+    /// Returns 24×24 matrix combining all stiffness components:
+    /// - Membrane (8×8): in-plane stretching [ux, uy]
+    /// - Bending (12×12): out-of-plane bending [uz, θx, θy]
+    /// - Drilling (4×4): rotation about normal [θz]
     fn local_stiffness(
         &self,
-        _nodes: &[Node],
-        _material: &Material,
+        nodes: &[Node],
+        material: &Material,
     ) -> Result<SMatrix<f64, 24, 24>, String> {
-        // Placeholder: return identity matrix
-        Ok(SMatrix::<f64, 24, 24>::identity())
+        if nodes.len() != 4 {
+            return Err(format!(
+                "Expected 4 nodes for local stiffness, got {}",
+                nodes.len()
+            ));
+        }
+
+        // Get component stiffness matrices
+        let k_membrane = self.membrane_stiffness(nodes, material)?;
+        let k_bending = self.bending_stiffness(nodes, material)?;
+        let k_drilling = self.drilling_stiffness(nodes, material)?;
+
+        // Assemble into 24×24 matrix
+        // Node i DOFs: [ux, uy, uz, θx, θy, θz] at indices [6*i .. 6*i+6]
+        let mut k_local = SMatrix::<f64, 24, 24>::zeros();
+
+        // Membrane stiffness: ux, uy DOFs
+        for i in 0..4 {
+            for j in 0..4 {
+                // ux-ux coupling
+                k_local[(6 * i, 6 * j)] = k_membrane[(2 * i, 2 * j)];
+                // ux-uy coupling
+                k_local[(6 * i, 6 * j + 1)] = k_membrane[(2 * i, 2 * j + 1)];
+                // uy-ux coupling
+                k_local[(6 * i + 1, 6 * j)] = k_membrane[(2 * i + 1, 2 * j)];
+                // uy-uy coupling
+                k_local[(6 * i + 1, 6 * j + 1)] = k_membrane[(2 * i + 1, 2 * j + 1)];
+            }
+        }
+
+        // Bending stiffness: uz, θx, θy DOFs
+        for i in 0..4 {
+            for j in 0..4 {
+                // uz-uz coupling
+                k_local[(6 * i + 2, 6 * j + 2)] = k_bending[(3 * i, 3 * j)];
+                // uz-θx coupling
+                k_local[(6 * i + 2, 6 * j + 3)] = k_bending[(3 * i, 3 * j + 1)];
+                // uz-θy coupling
+                k_local[(6 * i + 2, 6 * j + 4)] = k_bending[(3 * i, 3 * j + 2)];
+                // θx-uz coupling
+                k_local[(6 * i + 3, 6 * j + 2)] = k_bending[(3 * i + 1, 3 * j)];
+                // θx-θx coupling
+                k_local[(6 * i + 3, 6 * j + 3)] = k_bending[(3 * i + 1, 3 * j + 1)];
+                // θx-θy coupling
+                k_local[(6 * i + 3, 6 * j + 4)] = k_bending[(3 * i + 1, 3 * j + 2)];
+                // θy-uz coupling
+                k_local[(6 * i + 4, 6 * j + 2)] = k_bending[(3 * i + 2, 3 * j)];
+                // θy-θx coupling
+                k_local[(6 * i + 4, 6 * j + 3)] = k_bending[(3 * i + 2, 3 * j + 1)];
+                // θy-θy coupling
+                k_local[(6 * i + 4, 6 * j + 4)] = k_bending[(3 * i + 2, 3 * j + 2)];
+            }
+        }
+
+        // Drilling stiffness: θz DOFs
+        for i in 0..4 {
+            for j in 0..4 {
+                k_local[(6 * i + 5, 6 * j + 5)] = k_drilling[(i, j)];
+            }
+        }
+
+        Ok(k_local)
     }
 
     /// Build transformation matrix (local → global coordinates)
@@ -672,7 +792,151 @@ mod tests {
     }
 
     #[test]
-    fn stiffness_matrix_placeholder() {
+    fn drilling_stiffness_dimensions() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes();
+        let material = make_steel_material();
+
+        let k_drill = shell
+            .drilling_stiffness(&nodes, &material)
+            .expect("Should compute drilling stiffness");
+
+        assert_eq!(k_drill.nrows(), 4, "Drilling stiffness should be 4×4");
+        assert_eq!(k_drill.ncols(), 4, "Drilling stiffness should be 4×4");
+    }
+
+    #[test]
+    fn drilling_stiffness_symmetric() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes();
+        let material = make_steel_material();
+
+        let k_drill = shell
+            .drilling_stiffness(&nodes, &material)
+            .expect("Should compute drilling stiffness");
+
+        // Check symmetry
+        for i in 0..4 {
+            for j in 0..4 {
+                let diff = (k_drill[(i, j)] - k_drill[(j, i)]).abs();
+                assert!(
+                    diff < 1e-6,
+                    "Drilling stiffness should be symmetric"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn drilling_stiffness_positive() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes();
+        let material = make_steel_material();
+
+        let k_drill = shell
+            .drilling_stiffness(&nodes, &material)
+            .expect("Should compute drilling stiffness");
+
+        // All diagonal elements should be positive
+        for i in 0..4 {
+            assert!(
+                k_drill[(i, i)] > 0.0,
+                "Drilling stiffness diagonal elements should be positive"
+            );
+        }
+    }
+
+    #[test]
+    fn local_stiffness_dimensions() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes();
+        let material = make_steel_material();
+
+        let k_local = shell
+            .local_stiffness(&nodes, &material)
+            .expect("Should compute local stiffness");
+
+        assert_eq!(k_local.nrows(), 24, "Local stiffness should be 24×24");
+        assert_eq!(k_local.ncols(), 24, "Local stiffness should be 24×24");
+    }
+
+    #[test]
+    fn local_stiffness_symmetric() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes();
+        let material = make_steel_material();
+
+        let k_local = shell
+            .local_stiffness(&nodes, &material)
+            .expect("Should compute local stiffness");
+
+        // Check symmetry
+        for i in 0..24 {
+            for j in 0..24 {
+                let diff = (k_local[(i, j)] - k_local[(j, i)]).abs();
+                assert!(
+                    diff < 1e-6,
+                    "Local stiffness should be symmetric: K[{},{}]={:.6e}, K[{},{}]={:.6e}",
+                    i,
+                    j,
+                    k_local[(i, j)],
+                    j,
+                    i,
+                    k_local[(j, i)]
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn local_stiffness_positive_definite() {
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes();
+        let material = make_steel_material();
+
+        let k_local = shell
+            .local_stiffness(&nodes, &material)
+            .expect("Should compute local stiffness");
+
+        // Check positive semi-definite (should have ~6 rigid body modes)
+        let eigen = k_local.symmetric_eigen();
+        let eigenvalues = eigen.eigenvalues;
+
+        let mut positive_eigenvalues = 0;
+        let mut near_zero_eigenvalues = 0;
+
+        for &eig in eigenvalues.iter() {
+            if eig > 1e-3 {
+                positive_eigenvalues += 1;
+            } else if eig > -1e-6 {
+                near_zero_eigenvalues += 1;
+            } else {
+                panic!("Found negative eigenvalue: {}", eig);
+            }
+        }
+
+        // Expect most eigenvalues to be positive (24 DOFs - ~6 rigid body modes)
+        assert!(
+            positive_eigenvalues >= 15,
+            "Should have at least 15 positive eigenvalues, got {}",
+            positive_eigenvalues
+        );
+        // No negative eigenvalues (checked above by panic)
+        assert_eq!(
+            positive_eigenvalues + near_zero_eigenvalues,
+            24,
+            "All eigenvalues should be >= 0"
+        );
+    }
+
+    #[test]
+    fn stiffness_matrix_global() {
         let section = ShellSection::new(0.01);
         let shell = S4::new(1, vec![1, 2, 3, 4], section);
         let nodes = make_square_plate_nodes();
@@ -682,8 +946,19 @@ mod tests {
             .stiffness_matrix(&nodes, &material)
             .expect("Should compute stiffness");
 
-        assert_eq!(k.nrows(), 24);
-        assert_eq!(k.ncols(), 24);
+        assert_eq!(k.nrows(), 24, "Global stiffness should be 24×24");
+        assert_eq!(k.ncols(), 24, "Global stiffness should be 24×24");
+
+        // Check symmetry
+        for i in 0..24 {
+            for j in 0..24 {
+                let diff = (k[(i, j)] - k[(j, i)]).abs();
+                assert!(
+                    diff < 1e-6,
+                    "Global stiffness should be symmetric"
+                );
+            }
+        }
     }
 
     #[test]

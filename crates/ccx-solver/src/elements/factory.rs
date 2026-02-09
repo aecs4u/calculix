@@ -3,7 +3,7 @@
 /// This module provides factory functions to create appropriate element implementations
 /// based on element type, handling the conversion from mesh::Element to typed elements.
 
-use crate::elements::{Beam31, BeamSection, Element, Truss2D};
+use crate::elements::{Beam31, BeamSection, Element, S4, ShellSection, Truss2D};
 use crate::materials::Material;
 use crate::mesh::{ElementType, Node};
 use nalgebra::DMatrix;
@@ -15,6 +15,7 @@ use nalgebra::DMatrix;
 pub enum DynamicElement {
     Truss(Truss2D),
     Beam(Beam31),
+    Shell4(S4),
 }
 
 impl DynamicElement {
@@ -24,7 +25,7 @@ impl DynamicElement {
     /// * `elem_type` - The element type from the mesh
     /// * `elem_id` - Element ID
     /// * `nodes` - Node connectivity
-    /// * `default_area` - Default cross-sectional area (for truss/beam)
+    /// * `default_area` - Default cross-sectional area (for truss/beam) or thickness (for shell)
     ///
     /// # Returns
     /// A dynamic element wrapper, or None if the element type is not yet supported
@@ -46,6 +47,13 @@ impl DynamicElement {
                 let beam = Beam31::new(elem_id, nodes[0], nodes[1], section);
                 Some(DynamicElement::Beam(beam))
             }
+            ElementType::S4 => {
+                // For shells, default_area is interpreted as thickness
+                let thickness = if default_area < 0.001 { 0.01 } else { default_area };
+                let section = ShellSection::new(thickness);
+                let shell = S4::new(elem_id, nodes, section);
+                Some(DynamicElement::Shell4(shell))
+            }
             _ => None, // Unsupported element type
         }
     }
@@ -59,6 +67,7 @@ impl DynamicElement {
         match self {
             DynamicElement::Truss(truss) => truss.stiffness_matrix(nodes, material),
             DynamicElement::Beam(beam) => beam.stiffness_matrix(nodes, material),
+            DynamicElement::Shell4(shell) => shell.stiffness_matrix(nodes, material),
         }
     }
 
@@ -74,6 +83,7 @@ impl DynamicElement {
         let dofs_per_node = match self {
             DynamicElement::Truss(t) => t.dofs_per_node(),
             DynamicElement::Beam(b) => b.dofs_per_node(),
+            DynamicElement::Shell4(s) => s.dofs_per_node(),
         };
 
         let mut indices = Vec::new();
@@ -91,6 +101,7 @@ impl DynamicElement {
         match self {
             DynamicElement::Truss(_) => ElementType::T3D2,
             DynamicElement::Beam(_) => ElementType::B31,
+            DynamicElement::Shell4(_) => ElementType::S4,
         }
     }
 
@@ -99,6 +110,7 @@ impl DynamicElement {
         match self {
             DynamicElement::Truss(truss) => truss.num_nodes() * truss.dofs_per_node(),
             DynamicElement::Beam(beam) => beam.num_nodes() * beam.dofs_per_node(),
+            DynamicElement::Shell4(shell) => shell.num_nodes() * shell.dofs_per_node(),
         }
     }
 }
@@ -135,6 +147,21 @@ mod tests {
         let elem = elem.unwrap();
         assert_eq!(elem.element_type(), ElementType::B31);
         assert_eq!(elem.num_dofs(), 12); // 2 nodes × 6 DOFs
+    }
+
+    #[test]
+    fn test_create_shell_element() {
+        let elem = DynamicElement::from_mesh_element(
+            ElementType::S4,
+            1,
+            vec![1, 2, 3, 4],
+            0.01, // thickness
+        );
+
+        assert!(elem.is_some());
+        let elem = elem.unwrap();
+        assert_eq!(elem.element_type(), ElementType::S4);
+        assert_eq!(elem.num_dofs(), 24); // 4 nodes × 6 DOFs
     }
 
     #[test]
