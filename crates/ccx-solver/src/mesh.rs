@@ -35,6 +35,8 @@ impl Node {
 pub enum ElementType {
     /// 2-node truss element (T3D2)
     T3D2,
+    /// 3-node truss element (T3D3)
+    T3D3,
     /// 8-node brick element (C3D8)
     C3D8,
     /// 20-node brick element (C3D20)
@@ -74,6 +76,7 @@ impl ElementType {
     pub fn num_nodes(&self) -> usize {
         match self {
             ElementType::T3D2 => 2,
+            ElementType::T3D3 => 3,
             ElementType::C3D8 => 8,
             ElementType::C3D20 => 20,
             ElementType::C3D4 => 4,
@@ -97,7 +100,7 @@ impl ElementType {
     pub fn dofs_per_node(&self) -> usize {
         match self {
             // Truss elements: 3 translational DOFs
-            ElementType::T3D2 => 3,
+            ElementType::T3D2 | ElementType::T3D3 => 3,
 
             // 3D solid elements: 3 translational DOFs
             ElementType::C3D8 | ElementType::C3D20 |

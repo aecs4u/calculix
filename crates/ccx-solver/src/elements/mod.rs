@@ -9,12 +9,14 @@ pub mod factory;
 pub mod shell;
 pub mod solid;
 pub mod truss;
+pub mod truss3;
 
 pub use beam::{Beam31, BeamSection};
 pub use factory::DynamicElement;
 pub use shell::{S4, ShellSection};
 pub use solid::C3D8;
 pub use truss::Truss2D;
+pub use truss3::Truss3D;
 
 /// Element interface for finite element calculations
 pub trait Element {
