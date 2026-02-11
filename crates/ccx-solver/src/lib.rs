@@ -12,11 +12,13 @@ pub mod bc_builder;
 pub mod boundary_conditions;
 pub mod dat_writer;
 pub mod distributed_loads;
+pub mod dynamic_solver;
 pub mod elements;
 pub mod materials;
 pub mod mesh;
 pub mod mesh_builder;
 pub mod modal_solver;
+pub mod nonlinear_solver;
 pub mod ported;
 pub mod postprocess;
 pub mod sets;
@@ -32,11 +34,13 @@ pub use bc_builder::BCBuilder;
 pub use boundary_conditions::{BoundaryConditions, ConcentratedLoad, DisplacementBC, DofId};
 pub use dat_writer::{write_analysis_results, write_displacements_dat};
 pub use distributed_loads::DistributedLoadConverter;
+pub use dynamic_solver::{DynamicResults, DynamicSolver, NewmarkConfig};
 pub use elements::{Beam31, BeamSection, Element as ElementTrait, SectionProperties, Truss2D};
 pub use materials::{Material, MaterialLibrary, MaterialModel, MaterialStatistics};
 pub use mesh::{Element, ElementType, Mesh, MeshStatistics, Node};
 pub use mesh_builder::MeshBuilder;
 pub use modal_solver::{ModalResults, ModalSolver};
+pub use nonlinear_solver::{ConvergenceStatus, NonlinearConfig, NonlinearResults, NonlinearSolver};
 pub use ported::SUPERSEDED_FORTRAN_FILES;
 pub use postprocess::{
     compute_effective_strain, compute_mises_stress, compute_statistics, process_integration_points,
