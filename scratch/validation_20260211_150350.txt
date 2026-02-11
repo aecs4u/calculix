@@ -1,0 +1,36 @@
+CalculiX Rust Solver - Comprehensive Validation
+================================================
+Timestamp: 20260211_150350
+
+[0;34mTesting Truss Elements (T3D2)[0m
+  [0;32mPASS[0m truss.inp (DOFs: 9, Eq: 2 ✓)
+  [0;31mFAIL[0m truss2.inp: solve_error: Solver error: Unknown element type: T3D3
+
+[0;34mTesting Beam Elements (B31)[0m
+  [0;32mPASS[0m beam8f.inp (DOFs: 1275, Eq: 1200 )
+  [0;32mPASS[0m beamcr4.inp (DOFs: 60, Eq: 49 )
+  [0;32mPASS[0m beamcr2.inp (DOFs: 783, Eq: 759 )
+  [0;32mPASS[0m beamcr.inp (DOFs: 783, Eq: 759 )
+  [0;32mPASS[0m beamd.inp (DOFs: 783, Eq: 720 )
+  [0;32mPASS[0m beamb.inp (DOFs: 783, Eq: 720 )
+  [0;32mPASS[0m beamf.inp (DOFs: 783, Eq: 720 )
+
+[0;34mTesting Shell Elements (S4)[0m
+  [0;32mPASS[0m shell1.inp (DOFs: 63, Eq: 33 )
+  [0;32mPASS[0m shell2.inp (DOFs: 48, Eq: 21 )
+  [0;31mFAIL[0m shell3.inp: solve_error: Solver error: Element 4 references non-existent
+  [0;32mPASS[0m shell4.inp (DOFs: 1587, Eq: 1496 )
+  [0;31mFAIL[0m shell5.inp: solve_error: Solver error: Element 4 references non-existent
+
+[0;34mTesting Solid Elements (C3D8)[0m
+  [1;33mSKIP[0m c3d8.inp (not found)
+  [1;33mSKIP[0m achtel.inp (not found)
+  [0;32mPASS[0m achtelp.inp (DOFs: 243, Eq: 237 )
+
+================================================
+Summary:
+  Passed:  12
+  Failed:  3
+  Skipped: 2
+  Pass rate: 80,0%
+

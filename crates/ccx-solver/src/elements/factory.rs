@@ -3,7 +3,7 @@
 /// This module provides factory functions to create appropriate element implementations
 /// based on element type, handling the conversion from mesh::Element to typed elements.
 
-use crate::elements::{Beam31, BeamSection, C3D8, Element, S4, ShellSection, Truss2D};
+use crate::elements::{Beam31, BeamSection, C3D8, Element, S4, ShellSection, Truss2D, Truss3D};
 use crate::materials::Material;
 use crate::mesh::{ElementType, Node};
 use nalgebra::DMatrix;
@@ -14,6 +14,7 @@ use nalgebra::DMatrix;
 /// during assembly without knowing the concrete type at compile time.
 pub enum DynamicElement {
     Truss(Truss2D),
+    Truss3(Truss3D),
     Beam(Beam31),
     Shell4(S4),
     Solid8(C3D8),
@@ -40,6 +41,14 @@ impl DynamicElement {
             ElementType::T3D2 => {
                 let truss = Truss2D::new(elem_id, nodes, default_area);
                 Some(DynamicElement::Truss(truss))
+            }
+            ElementType::T3D3 => {
+                if nodes.len() != 3 {
+                    return None;
+                }
+                let node_array: [i32; 3] = nodes.try_into().ok()?;
+                let truss3 = Truss3D::new(elem_id, node_array, default_area);
+                Some(DynamicElement::Truss3(truss3))
             }
             ElementType::B31 => {
                 // For now, use circular section with area-equivalent radius
@@ -74,6 +83,7 @@ impl DynamicElement {
     ) -> Result<DMatrix<f64>, String> {
         match self {
             DynamicElement::Truss(truss) => truss.stiffness_matrix(nodes, material),
+            DynamicElement::Truss3(truss3) => truss3.stiffness_matrix(nodes, material),
             DynamicElement::Beam(beam) => beam.stiffness_matrix(nodes, material),
             DynamicElement::Shell4(shell) => shell.stiffness_matrix(nodes, material),
             DynamicElement::Solid8(solid) => solid.stiffness_matrix(nodes, material),
@@ -88,6 +98,7 @@ impl DynamicElement {
     ) -> Result<DMatrix<f64>, String> {
         match self {
             DynamicElement::Truss(truss) => truss.mass_matrix(nodes, material),
+            DynamicElement::Truss3(truss3) => truss3.mass_matrix(nodes, material),
             DynamicElement::Beam(beam) => beam.mass_matrix(nodes, material),
             DynamicElement::Shell4(shell) => shell.mass_matrix(nodes, material),
             DynamicElement::Solid8(solid) => solid.mass_matrix(nodes, material),
@@ -105,6 +116,7 @@ impl DynamicElement {
     pub fn global_dof_indices(&self, connectivity: &[i32], max_dofs_per_node: usize) -> Vec<usize> {
         let dofs_per_node = match self {
             DynamicElement::Truss(t) => t.dofs_per_node(),
+            DynamicElement::Truss3(t3) => t3.dofs_per_node(),
             DynamicElement::Beam(b) => b.dofs_per_node(),
             DynamicElement::Shell4(s) => s.dofs_per_node(),
             DynamicElement::Solid8(c) => c.dofs_per_node(),
@@ -124,6 +136,7 @@ impl DynamicElement {
     pub fn element_type(&self) -> ElementType {
         match self {
             DynamicElement::Truss(_) => ElementType::T3D2,
+            DynamicElement::Truss3(_) => ElementType::T3D3,
             DynamicElement::Beam(_) => ElementType::B31,
             DynamicElement::Shell4(_) => ElementType::S4,
             DynamicElement::Solid8(_) => ElementType::C3D8,
@@ -134,6 +147,7 @@ impl DynamicElement {
     pub fn num_dofs(&self) -> usize {
         match self {
             DynamicElement::Truss(truss) => truss.num_nodes() * truss.dofs_per_node(),
+            DynamicElement::Truss3(truss3) => truss3.num_nodes() * truss3.dofs_per_node(),
             DynamicElement::Beam(beam) => beam.num_nodes() * beam.dofs_per_node(),
             DynamicElement::Shell4(shell) => shell.num_nodes() * shell.dofs_per_node(),
             DynamicElement::Solid8(solid) => solid.num_nodes() * solid.dofs_per_node(),

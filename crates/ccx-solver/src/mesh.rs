@@ -125,6 +125,7 @@ impl ElementType {
         let type_upper = type_str.to_uppercase();
         match type_upper.as_str() {
             "T3D2" => Some(ElementType::T3D2),
+            "T3D3" => Some(ElementType::T3D3),
             "C3D8" | "C3D8R" | "C3D8I" => Some(ElementType::C3D8),
             "C3D20" | "C3D20R" => Some(ElementType::C3D20),
             "C3D4" => Some(ElementType::C3D4),
