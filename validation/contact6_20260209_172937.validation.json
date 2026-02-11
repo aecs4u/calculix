@@ -1,0 +1,11 @@
+{
+  "analysis_type": "LinearStatic",
+  "datetime": "2026-02-09T17:29:37.882232285+00:00",
+  "input_file": "tests/fixtures/solver/contact6.inp",
+  "message": "Model initialized: 16 nodes, 2 elements, 48 DOFs (20 free, 28 constrained), 4 loads [SOLVED]",
+  "num_dofs": 48,
+  "num_equations": 20,
+  "success": true,
+  "test_name": "contact6",
+  "timestamp": "20260209_172937"
+}

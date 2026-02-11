@@ -1,0 +1,11 @@
+{
+  "analysis_type": "LinearStatic",
+  "datetime": "2026-02-11T01:01:32.841483202+00:00",
+  "input_file": "tests/fixtures/solver/changefric.inp",
+  "message": "Model initialized: 16 nodes, 2 elements, 48 DOFs (33 free, 15 constrained), 0 loads [SOLVED]",
+  "num_dofs": 48,
+  "num_equations": 33,
+  "success": true,
+  "test_name": "changefric",
+  "timestamp": "20260211_010132"
+}

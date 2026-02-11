@@ -7,6 +7,7 @@ mod insertsortd;
 mod nident;
 mod strcmp1;
 mod string_parsers;
+mod string_utils;
 mod superseded_fortran;
 
 pub use bsort::{BSortBounds, BSortError, bsort};
@@ -16,4 +17,5 @@ pub use insertsortd::insertsortd;
 pub use nident::{nident, nident2};
 pub use strcmp1::strcmp1;
 pub use string_parsers::{stof, stoi};
+pub use string_utils::{strcmp2, strcpy1, strcpy2, stos, stos_inv, strsplt};
 pub use superseded_fortran::{SUPERSEDED_FORTRAN_FILES, is_superseded_fortran};

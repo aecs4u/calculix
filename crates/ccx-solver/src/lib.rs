@@ -10,6 +10,7 @@ pub mod assembly;
 pub mod backend;
 pub mod bc_builder;
 pub mod boundary_conditions;
+pub mod dat_writer;
 pub mod distributed_loads;
 pub mod elements;
 pub mod materials;
@@ -29,6 +30,7 @@ pub use backend::{
 };
 pub use bc_builder::BCBuilder;
 pub use boundary_conditions::{BoundaryConditions, ConcentratedLoad, DisplacementBC, DofId};
+pub use dat_writer::{write_analysis_results, write_displacements_dat};
 pub use distributed_loads::DistributedLoadConverter;
 pub use elements::{Beam31, BeamSection, Element as ElementTrait, SectionProperties, Truss2D};
 pub use materials::{Material, MaterialLibrary, MaterialModel, MaterialStatistics};

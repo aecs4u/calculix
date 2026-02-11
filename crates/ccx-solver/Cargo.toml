@@ -10,10 +10,17 @@ ccx-model = { path = "../ccx-model" }
 nalgebra = { version = "0.34", features = ["sparse"] }
 nalgebra-sparse = "0.10"
 nalgebra-lapack = "0.27"
+serde = { version = "1.0", features = ["derive"] }
+
+# PETSc FFI bindings (optional, enabled with --features petsc)
+# Requires: PETSc 3.15+ installed, PETSC_DIR and PETSC_ARCH environment variables
+# petsc-sys = { git = "https://gitlab.com/petsc/petsc-rs/", branch = "main", default-features = false, optional = true }
+# slepc-sys = { git = "https://github.com/tflovorn/slepc-sys", optional = true }
 
 [features]
 default = []
-petsc = []
+# petsc = ["dep:petsc-sys", "dep:slepc-sys"]
+petsc = []  # Configuration ready, FFI bindings to be added when PETSc is available
 
 [[bin]]
 name = "ccx-solver"

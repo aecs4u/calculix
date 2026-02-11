@@ -1,0 +1,11 @@
+{
+  "analysis_type": "LinearStatic",
+  "datetime": "2026-02-11T00:49:45.094522928+00:00",
+  "input_file": "tests/fixtures/solver/changesurfbeh.inp",
+  "message": "Model initialized: 16 nodes, 2 elements, 48 DOFs (24 free, 24 constrained), 0 loads [SOLVED]",
+  "num_dofs": 48,
+  "num_equations": 24,
+  "success": true,
+  "test_name": "changesurfbeh",
+  "timestamp": "20260211_004945"
+}

@@ -138,6 +138,7 @@ dependencies = [
  "nalgebra 0.34.1",
  "nalgebra-lapack",
  "nalgebra-sparse",
+ "serde",
 ]
 
 [[package]]

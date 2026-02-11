@@ -1,0 +1,50 @@
+warning: unused import: `DMatrix`
+  --> crates/ccx-solver/src/backend/petsc.rs:80:16
+   |
+80 | use nalgebra::{DMatrix, DVector};
+   |                ^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+error[E0609]: no field `dofs_per_node` on type `&Mesh`
+  --> crates/ccx-solver/src/dat_writer.rs:51:30
+   |
+51 |     let dofs_per_node = mesh.dofs_per_node;
+   |                              ^^^^^^^^^^^^^ unknown field
+   |
+   = note: available fields are: `nodes`, `elements`, `num_dofs`
+
+warning: unused variable: `system`
+   --> crates/ccx-solver/src/backend/petsc.rs:129:9
+    |
+129 |         system: &LinearSystemData,
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_system`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `system`
+   --> crates/ccx-solver/src/backend/petsc.rs:174:9
+    |
+174 |         system: &EigenSystemData,
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_system`
+
+warning: unused variable: `num_modes`
+   --> crates/ccx-solver/src/backend/petsc.rs:175:9
+    |
+175 |         num_modes: usize,
+    |         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_num_modes`
+
+warning: unused variable: `triplets`
+  --> crates/ccx-solver/src/backend/petsc_wrapper.rs:89:26
+   |
+89 |     pub fn from_triplets(triplets: &SparseTripletsF64) -> Result<Self, BackendError> {
+   |                          ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_triplets`
+
+warning: unused variable: `data`
+   --> crates/ccx-solver/src/backend/petsc_wrapper.rs:165:25
+    |
+165 |     pub fn from_dvector(data: &DVector<f64>) -> Result<Self, BackendError> {
+    |                         ^^^^ help: if this is intentional, prefix it with an underscore: `_data`
+
+For more information about this error, try `rustc --explain E0609`.
+error: could not compile `ccx-solver` (lib) due to 1 previous error; 6 warnings emitted

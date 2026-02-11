@@ -29,10 +29,14 @@
 
 pub mod native;
 pub mod petsc;
+pub mod petsc_config;
+pub mod petsc_wrapper;
 pub mod traits;
 
 pub use native::NativeBackend;
 pub use petsc::PetscBackend;
+pub use petsc_config::*;
+pub use petsc_wrapper::*;
 pub use traits::*;
 
 /// Returns the default solver backend based on enabled features.

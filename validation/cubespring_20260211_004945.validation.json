@@ -1,0 +1,11 @@
+{
+  "analysis_type": "LinearStatic",
+  "datetime": "2026-02-11T00:49:45.133306977+00:00",
+  "input_file": "tests/fixtures/solver/cubespring.inp",
+  "message": "Model initialized: 128 nodes, 54 elements, 384 DOFs (304 free, 80 constrained), 0 loads [SOLVED]",
+  "num_dofs": 384,
+  "num_equations": 304,
+  "success": true,
+  "test_name": "cubespring",
+  "timestamp": "20260211_004945"
+}

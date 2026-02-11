@@ -1,0 +1,11 @@
+{
+  "analysis_type": "LinearStatic",
+  "datetime": "2026-02-11T01:01:42.114393454+00:00",
+  "input_file": "tests/fixtures/solver/friction2.inp",
+  "message": "Model initialized: 16 nodes, 2 elements, 48 DOFs (12 free, 36 constrained), 0 loads [SOLVED]",
+  "num_dofs": 48,
+  "num_equations": 12,
+  "success": true,
+  "test_name": "friction2",
+  "timestamp": "20260211_010142"
+}

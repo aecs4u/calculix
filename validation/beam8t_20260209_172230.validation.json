@@ -1,0 +1,11 @@
+{
+  "analysis_type": "LinearStatic",
+  "datetime": "2026-02-09T17:22:30.954520668+00:00",
+  "input_file": "tests/fixtures/solver/beam8t.inp",
+  "message": "Model initialized: 425 nodes, 256 elements, 1275 DOFs (1200 free, 75 constrained), 0 loads [SOLVED]",
+  "num_dofs": 1275,
+  "num_equations": 1200,
+  "success": true,
+  "test_name": "beam8t",
+  "timestamp": "20260209_172230"
+}

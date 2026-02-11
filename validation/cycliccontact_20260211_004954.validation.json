@@ -1,0 +1,11 @@
+{
+  "analysis_type": "LinearStatic",
+  "datetime": "2026-02-11T00:49:54.515340016+00:00",
+  "input_file": "tests/fixtures/solver/cycliccontact.inp",
+  "message": "Model initialized: 1001 nodes, 624 elements, 3003 DOFs (2991 free, 12 constrained), 0 loads [SOLVED]",
+  "num_dofs": 3003,
+  "num_equations": 2991,
+  "success": true,
+  "test_name": "cycliccontact",
+  "timestamp": "20260211_004954"
+}

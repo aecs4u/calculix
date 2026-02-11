@@ -1,0 +1,11 @@
+{
+  "analysis_type": "LinearStatic",
+  "datetime": "2026-02-11T01:01:22.250243796+00:00",
+  "input_file": "tests/fixtures/solver/b31.inp",
+  "message": "Model initialized: 11 nodes, 10 elements, 33 DOFs (27 free, 6 constrained), 1 loads [SOLVED]",
+  "num_dofs": 33,
+  "num_equations": 27,
+  "success": true,
+  "test_name": "b31",
+  "timestamp": "20260211_010122"
+}
