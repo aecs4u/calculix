@@ -3,7 +3,7 @@
 /// This module provides factory functions to create appropriate element implementations
 /// based on element type, handling the conversion from mesh::Element to typed elements.
 
-use crate::elements::{Beam31, BeamSection, C3D8, Element, S4, ShellSection, Truss2D, Truss3D};
+use crate::elements::{Beam31, Beam32, BeamSection, C3D8, Element, S4, ShellSection, Truss2D, Truss3D};
 use crate::materials::Material;
 use crate::mesh::{ElementType, Node};
 use nalgebra::DMatrix;
@@ -16,6 +16,7 @@ pub enum DynamicElement {
     Truss(Truss2D),
     Truss3(Truss3D),
     Beam(Beam31),
+    Beam3(Beam32),
     Shell4(S4),
     Solid8(C3D8),
 }
@@ -57,6 +58,16 @@ impl DynamicElement {
                 let beam = Beam31::new(elem_id, nodes[0], nodes[1], section);
                 Some(DynamicElement::Beam(beam))
             }
+            ElementType::B32 => {
+                if nodes.len() != 3 {
+                    return None;
+                }
+                let radius = (default_area / std::f64::consts::PI).sqrt();
+                let section = BeamSection::circular(radius);
+                let node_array: [i32; 3] = nodes.try_into().ok()?;
+                let beam3 = Beam32::new(elem_id, node_array, section);
+                Some(DynamicElement::Beam3(beam3))
+            }
             ElementType::S4 => {
                 // For shells, default_area is interpreted as thickness
                 let thickness = if default_area < 0.001 { 0.01 } else { default_area };
@@ -85,6 +96,7 @@ impl DynamicElement {
             DynamicElement::Truss(truss) => truss.stiffness_matrix(nodes, material),
             DynamicElement::Truss3(truss3) => truss3.stiffness_matrix(nodes, material),
             DynamicElement::Beam(beam) => beam.stiffness_matrix(nodes, material),
+            DynamicElement::Beam3(beam3) => beam3.stiffness_matrix(nodes, material),
             DynamicElement::Shell4(shell) => shell.stiffness_matrix(nodes, material),
             DynamicElement::Solid8(solid) => solid.stiffness_matrix(nodes, material),
         }
@@ -100,6 +112,7 @@ impl DynamicElement {
             DynamicElement::Truss(truss) => truss.mass_matrix(nodes, material),
             DynamicElement::Truss3(truss3) => truss3.mass_matrix(nodes, material),
             DynamicElement::Beam(beam) => beam.mass_matrix(nodes, material),
+            DynamicElement::Beam3(beam3) => beam3.mass_matrix(nodes, material),
             DynamicElement::Shell4(shell) => shell.mass_matrix(nodes, material),
             DynamicElement::Solid8(solid) => solid.mass_matrix(nodes, material),
         }
@@ -118,6 +131,7 @@ impl DynamicElement {
             DynamicElement::Truss(t) => t.dofs_per_node(),
             DynamicElement::Truss3(t3) => t3.dofs_per_node(),
             DynamicElement::Beam(b) => b.dofs_per_node(),
+            DynamicElement::Beam3(b3) => b3.dofs_per_node(),
             DynamicElement::Shell4(s) => s.dofs_per_node(),
             DynamicElement::Solid8(c) => c.dofs_per_node(),
         };
@@ -138,6 +152,7 @@ impl DynamicElement {
             DynamicElement::Truss(_) => ElementType::T3D2,
             DynamicElement::Truss3(_) => ElementType::T3D3,
             DynamicElement::Beam(_) => ElementType::B31,
+            DynamicElement::Beam3(_) => ElementType::B32,
             DynamicElement::Shell4(_) => ElementType::S4,
             DynamicElement::Solid8(_) => ElementType::C3D8,
         }
@@ -149,6 +164,7 @@ impl DynamicElement {
             DynamicElement::Truss(truss) => truss.num_nodes() * truss.dofs_per_node(),
             DynamicElement::Truss3(truss3) => truss3.num_nodes() * truss3.dofs_per_node(),
             DynamicElement::Beam(beam) => beam.num_nodes() * beam.dofs_per_node(),
+            DynamicElement::Beam3(beam3) => beam3.num_nodes() * beam3.dofs_per_node(),
             DynamicElement::Shell4(shell) => shell.num_nodes() * shell.dofs_per_node(),
             DynamicElement::Solid8(solid) => solid.num_nodes() * solid.dofs_per_node(),
         }

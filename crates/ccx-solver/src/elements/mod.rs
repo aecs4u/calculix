@@ -5,6 +5,7 @@ use crate::mesh::Node;
 use nalgebra::DMatrix;
 
 pub mod beam;
+pub mod beam3;
 pub mod factory;
 pub mod shell;
 pub mod solid;
@@ -12,6 +13,7 @@ pub mod truss;
 pub mod truss3;
 
 pub use beam::{Beam31, BeamSection};
+pub use beam3::Beam32;
 pub use factory::DynamicElement;
 pub use shell::{S4, ShellSection};
 pub use solid::C3D8;
