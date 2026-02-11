@@ -50,6 +50,7 @@ def require_binaries(pytestconfig: pytest.Config) -> bool:
 @pytest.fixture(scope="session")
 def ccx_bin(repo_root: Path, require_binaries: bool) -> Path:
     candidates = [
+        repo_root / "dist" / "ccx_2.23",
         repo_root / "ccx_f" / "ccx_2.23",
         Path(shutil.which("ccx") or ""),
     ]
@@ -67,6 +68,7 @@ def ccx_bin(repo_root: Path, require_binaries: bool) -> Path:
 @pytest.fixture(scope="session")
 def cgx_bin(repo_root: Path, require_binaries: bool) -> Path:
     candidates = [
+        repo_root / "dist" / "cgx_2.23",
         repo_root / "cgx_c" / "src" / "cgx",
         Path(shutil.which("cgx") or ""),
     ]
