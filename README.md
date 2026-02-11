@@ -25,6 +25,29 @@ crates/
 └── ccx-compat/       # Temporary C/Fortran compatibility bridge
 ```
 
+### Solver Architecture
+
+The solver uses a **backend abstraction layer** that separates element-level
+computation (nalgebra dense matrices) from global system solving. Any backend
+implementing the `LinearSolver` / `EigenSolver` traits can be plugged in.
+
+![Solver Architecture](docs/solver_architecture.svg)
+
+**Backends:**
+- **Native** (default) — nalgebra + nalgebra-lapack. No external dependencies.
+  Suitable for small-to-medium problems.
+- **PETSc** (optional, `--features petsc`) — Access to MUMPS, SuperLU, PaStiX
+  direct solvers and iterative Krylov methods (CG, GMRES, BiCGSTAB) with
+  preconditioners (ILU, AMG, etc.). Requires PETSc 3.15+ installed.
+
+```bash
+# Build with default (native) backend
+cargo build -p ccx-solver
+
+# Build with PETSc backend
+cargo build -p ccx-solver --features petsc
+```
+
 #### 📦 ccx-cli
 
 Main command-line interface for CalculiX operations.
@@ -335,6 +358,8 @@ CALCULIX_RUN_FULL=1 python3 -m pytest --full-matrix
 | `crates/ccx-solver/PORTING.md` | Porting guidelines for C/Fortran → Rust |
 | `crates/ccx-solver/README.md` | Solver crate detailed documentation |
 | `docs/calculix_cli.md` | CLI usage and commands |
+| `docs/ccx_2.23_build_scripts.md` | Legacy `ccx_2.23/src` executable build scripts |
+| `docs/ccx_solver_modernization_roadmap.md` | Feature-branch roadmap for solver modernization |
 | `docs/migration/feature-coverage.md` | Feature parity tracking matrix |
 | `TESTING.md` | Test coverage and quality workflow |
 

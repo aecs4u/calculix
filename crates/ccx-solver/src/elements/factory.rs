@@ -3,7 +3,7 @@
 /// This module provides factory functions to create appropriate element implementations
 /// based on element type, handling the conversion from mesh::Element to typed elements.
 
-use crate::elements::{Beam31, BeamSection, Element, S4, ShellSection, Truss2D};
+use crate::elements::{Beam31, BeamSection, C3D8, Element, S4, ShellSection, Truss2D};
 use crate::materials::Material;
 use crate::mesh::{ElementType, Node};
 use nalgebra::DMatrix;
@@ -16,6 +16,7 @@ pub enum DynamicElement {
     Truss(Truss2D),
     Beam(Beam31),
     Shell4(S4),
+    Solid8(C3D8),
 }
 
 impl DynamicElement {
@@ -54,6 +55,13 @@ impl DynamicElement {
                 let shell = S4::new(elem_id, nodes, section);
                 Some(DynamicElement::Shell4(shell))
             }
+            ElementType::C3D8 => {
+                if nodes.len() != 8 {
+                    return None;
+                }
+                let node_array: [i32; 8] = nodes.try_into().ok()?;
+                Some(DynamicElement::Solid8(C3D8::new(elem_id, node_array)))
+            }
             _ => None, // Unsupported element type
         }
     }
@@ -68,6 +76,21 @@ impl DynamicElement {
             DynamicElement::Truss(truss) => truss.stiffness_matrix(nodes, material),
             DynamicElement::Beam(beam) => beam.stiffness_matrix(nodes, material),
             DynamicElement::Shell4(shell) => shell.stiffness_matrix(nodes, material),
+            DynamicElement::Solid8(solid) => solid.stiffness_matrix(nodes, material),
+        }
+    }
+
+    /// Compute mass matrix for this element
+    pub fn mass_matrix(
+        &self,
+        nodes: &[Node],
+        material: &Material,
+    ) -> Result<DMatrix<f64>, String> {
+        match self {
+            DynamicElement::Truss(truss) => truss.mass_matrix(nodes, material),
+            DynamicElement::Beam(beam) => beam.mass_matrix(nodes, material),
+            DynamicElement::Shell4(shell) => shell.mass_matrix(nodes, material),
+            DynamicElement::Solid8(solid) => solid.mass_matrix(nodes, material),
         }
     }
 
@@ -84,6 +107,7 @@ impl DynamicElement {
             DynamicElement::Truss(t) => t.dofs_per_node(),
             DynamicElement::Beam(b) => b.dofs_per_node(),
             DynamicElement::Shell4(s) => s.dofs_per_node(),
+            DynamicElement::Solid8(c) => c.dofs_per_node(),
         };
 
         let mut indices = Vec::new();
@@ -102,6 +126,7 @@ impl DynamicElement {
             DynamicElement::Truss(_) => ElementType::T3D2,
             DynamicElement::Beam(_) => ElementType::B31,
             DynamicElement::Shell4(_) => ElementType::S4,
+            DynamicElement::Solid8(_) => ElementType::C3D8,
         }
     }
 
@@ -111,6 +136,7 @@ impl DynamicElement {
             DynamicElement::Truss(truss) => truss.num_nodes() * truss.dofs_per_node(),
             DynamicElement::Beam(beam) => beam.num_nodes() * beam.dofs_per_node(),
             DynamicElement::Shell4(shell) => shell.num_nodes() * shell.dofs_per_node(),
+            DynamicElement::Solid8(solid) => solid.num_nodes() * solid.dofs_per_node(),
         }
     }
 }
@@ -166,13 +192,84 @@ mod tests {
 
     #[test]
     fn test_unsupported_element_type() {
+        // C3D20 (20-node brick) is not yet supported
         let elem = DynamicElement::from_mesh_element(
-            ElementType::C3D8,
+            ElementType::C3D20,
             1,
-            vec![0, 1, 2, 3, 4, 5, 6, 7],
+            vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
             0.01,
         );
 
         assert!(elem.is_none());
+    }
+
+    #[test]
+    fn test_mass_matrix_dispatch() {
+        // Test that mass_matrix() dispatch works for all element types
+        use crate::materials::{Material, MaterialModel};
+
+        let material = Material {
+            name: "STEEL".to_string(),
+            model: MaterialModel::LinearElastic,
+            elastic_modulus: Some(200e9),
+            poissons_ratio: Some(0.3),
+            density: Some(7850.0), // kg/m³
+            thermal_expansion: None,
+            conductivity: None,
+            specific_heat: None,
+        };
+
+        // Test Truss
+        let truss_elem = DynamicElement::from_mesh_element(
+            ElementType::T3D2,
+            1,
+            vec![1, 2],
+            0.01,
+        ).unwrap();
+        let truss_nodes = vec![
+            Node::new(1, 0.0, 0.0, 0.0),
+            Node::new(2, 1.0, 0.0, 0.0),
+        ];
+        let m_truss = truss_elem.mass_matrix(&truss_nodes, &material);
+        assert!(m_truss.is_ok(), "Truss mass matrix should succeed");
+        let m = m_truss.unwrap();
+        assert_eq!(m.nrows(), 6);
+        assert_eq!(m.ncols(), 6);
+
+        // Test Beam
+        let beam_elem = DynamicElement::from_mesh_element(
+            ElementType::B31,
+            1,
+            vec![1, 2],
+            0.01,
+        ).unwrap();
+        let beam_nodes = vec![
+            Node::new(1, 0.0, 0.0, 0.0),
+            Node::new(2, 1.0, 0.0, 0.0),
+        ];
+        let m_beam = beam_elem.mass_matrix(&beam_nodes, &material);
+        assert!(m_beam.is_ok(), "Beam mass matrix should succeed");
+        let m = m_beam.unwrap();
+        assert_eq!(m.nrows(), 12);
+        assert_eq!(m.ncols(), 12);
+
+        // Test Shell
+        let shell_elem = DynamicElement::from_mesh_element(
+            ElementType::S4,
+            1,
+            vec![1, 2, 3, 4],
+            0.01, // thickness
+        ).unwrap();
+        let shell_nodes = vec![
+            Node::new(1, 0.0, 0.0, 0.0),
+            Node::new(2, 1.0, 0.0, 0.0),
+            Node::new(3, 1.0, 1.0, 0.0),
+            Node::new(4, 0.0, 1.0, 0.0),
+        ];
+        let m_shell = shell_elem.mass_matrix(&shell_nodes, &material);
+        assert!(m_shell.is_ok(), "Shell mass matrix should succeed");
+        let m = m_shell.unwrap();
+        assert_eq!(m.nrows(), 24);
+        assert_eq!(m.ncols(), 24);
     }
 }

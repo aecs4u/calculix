@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}{{ example.name }} - CalculiX Validation{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Navigation -->
+<div style="margin-bottom: 20px;">
+    <a href="/examples" style="color: #3498db; text-decoration: none;">← Back to Examples</a>
+</div>
+
+<!-- Example Header -->
+<div class="content-box">
+    <h1>{{ example.name }}</h1>
+
+    {% if example.description %}
+    <p style="color: #7f8c8d; margin-bottom: 20px;">{{ example.description }}</p>
+    {% endif %}
+
+    <!-- Example Metadata -->
+    <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin: 20px 0;">
+        <div class="stat-card">
+            <div class="label">Element Type</div>
+            <div class="value"><code>{{ example.element_type or 'N/A' }}</code></div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Nodes</div>
+            <div class="value">{{ example.num_nodes or 'N/A' }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Elements</div>
+            <div class="value">{{ example.num_elements or 'N/A' }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">DOFs</div>
+            <div class="value">{{ example.num_dofs or 'N/A' }}</div>
+        </div>
+    </div>
+
+    <!-- File Links Section -->
+    <h2>📁 Files</h2>
+    <div style="background: #2c3e50; padding: 20px; border-radius: 5px; margin: 20px 0;">
+        {% if example.input_file_path %}
+        <div style="margin-bottom: 15px;">
+            <strong style="color: #3498db;">Input File:</strong>
+            <div style="margin-top: 5px;">
+                <a href="/api/examples/{{ example.id }}/files/input"
+                   style="color: #2ecc71; text-decoration: none; font-family: monospace;"
+                   download>
+                    📄 {{ example.input_file_path.split('/')[-1] }}
+                </a>
+                <span style="color: #95a5a6; margin-left: 10px;">
+                    ({{ example.input_file_path }})
+                </span>
+            </div>
+        </div>
+        {% else %}
+        <div style="color: #95a5a6; margin-bottom: 15px;">
+            <strong>Input File:</strong> Not available
+        </div>
+        {% endif %}
+
+        <div style="margin-bottom: 15px;">
+            <strong style="color: #3498db;">Output Files:</strong>
+            <div style="margin-top: 5px;">
+                {% if example.input_file_path %}
+                {% set base_path = example.input_file_path.rsplit('.', 1)[0] %}
+                <div style="margin: 5px 0;">
+                    <a href="/api/examples/{{ example.id }}/files/dat"
+                       style="color: #2ecc71; text-decoration: none; font-family: monospace;"
+                       download>
+                        📊 {{ base_path.split('/')[-1] }}.dat
+                    </a>
+                    <span style="color: #95a5a6; margin-left: 10px;">(Results file)</span>
+                </div>
+                <div style="margin: 5px 0;">
+                    <a href="/api/examples/{{ example.id }}/files/frd"
+                       style="color: #2ecc71; text-decoration: none; font-family: monospace;"
+                       download>
+                        📈 {{ base_path.split('/')[-1] }}.frd
+                    </a>
+                    <span style="color: #95a5a6; margin-left: 10px;">(Field output)</span>
+                </div>
+                {% else %}
+                <div style="color: #95a5a6;">Not available</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Validation Results -->
+    <h2>✅ Validation Results</h2>
+
+    {% if validations %}
+    <table>
+        <thead>
+            <tr>
+                <th>Run Date</th>
+                <th>Field</th>
+                <th>Expected Value</th>
+                <th>Actual Value</th>
+                <th>Relative Error</th>
+                <th>Tolerance</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in validations %}
+            <tr>
+                <td class="timestamp">{{ v.run_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td><code>{{ v.field_name }}</code></td>
+                <td>{{ "%.6g"|format(v.expected_value) if v.expected_value else 'N/A' }}</td>
+                <td>{{ "%.6g"|format(v.actual_value) if v.actual_value else 'N/A' }}</td>
+                <td>
+                    {% if v.relative_error is not none %}
+                    {{ "%.4f"|format(v.relative_error * 100) }}%
+                    {% else %}
+                    N/A
+                    {% endif %}
+                </td>
+                <td>{{ "%.2f"|format(v.tolerance * 100) if v.tolerance else 'N/A' }}%</td>
+                <td>
+                    {% if v.passed %}
+                    <span class="status-pass">✓ PASS</span>
+                    {% else %}
+                    <span class="status-fail">✗ FAIL</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #95a5a6; padding: 20px; text-align: center;">
+        No validation results available for this example.
+    </p>
+    {% endif %}
+</div>
+
+<style>
+.stat-card {
+    background: #34495e;
+    padding: 15px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.stat-card .label {
+    color: #95a5a6;
+    font-size: 0.9em;
+    margin-bottom: 5px;
+}
+
+.stat-card .value {
+    color: #ecf0f1;
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+.status-pass {
+    color: #2ecc71;
+    font-weight: bold;
+}
+
+.status-fail {
+    color: #e74c3c;
+    font-weight: bold;
+}
+
+.timestamp {
+    color: #95a5a6;
+    font-size: 0.9em;
+}
+</style>
+{% endblock %}

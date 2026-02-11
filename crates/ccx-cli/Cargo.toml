@@ -9,6 +9,8 @@ ccx-solver = { path = "../ccx-solver" }
 ccx-inp = { path = "../ccx-inp" }
 ccx-model = { path = "../ccx-model" }
 ccx-io = { path = "../ccx-io" }
+chrono = "0.4"
+serde_json = "1.0"
 
 [[bin]]
 name = "ccx-cli"

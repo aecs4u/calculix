@@ -84,7 +84,11 @@
                 data-pass-rate="{{ item.pass_rate }}"
                 data-test-count="{{ item.test_count }}"
                 data-status="{% if item.pass_rate >= 95 %}excellent{% elif item.pass_rate >= 80 %}good{% else %}needs-attention{% endif %}">
-                <td><strong>{{ item.module.name }}</strong></td>
+                <td>
+                    <a href="/modules/{{ item.module.name }}" style="color: #3498db; text-decoration: none;">
+                        <strong>{{ item.module.name }}</strong>
+                    </a>
+                </td>
                 <td>{{ item.module.description or 'N/A' }}</td>
                 <td>{{ item.test_count }}</td>
                 <td class="status-pass">{{ item.passing }}</td>

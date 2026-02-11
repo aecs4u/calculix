@@ -80,29 +80,29 @@
 <div class="stats-grid">
     <div class="stat-card">
         <div class="label">Completed Features</div>
-        <div class="value">7</div>
+        <div class="value">10</div>
         <div class="badge success">✅ Implemented</div>
     </div>
     <div class="stat-card">
         <div class="label">In Progress</div>
-        <div class="value">3</div>
+        <div class="value">2</div>
         <div class="badge warning">🚧 Active Development</div>
     </div>
     <div class="stat-card">
         <div class="label">Planned Features</div>
-        <div class="value">45+</div>
+        <div class="value">150+</div>
         <div class="badge success">📋 Roadmap</div>
     </div>
     <div class="stat-card">
-        <div class="label">Total Element Types</div>
-        <div class="value">55+</div>
-        <div class="badge success">Tracked</div>
+        <div class="label">CalculiX Features Tracked</div>
+        <div class="value">162</div>
+        <div class="badge success">Comprehensive</div>
     </div>
 </div>
 
 <div class="content-box">
     <h2>🔬 CalculiX Rust Solver - Feature Comparison</h2>
-    <p>Comprehensive comparison of ccx-solver capabilities versus CalculiX, Abaqus, MSC.Nastran, and NASTRAN-95</p>
+    <p>Comprehensive comparison of ccx-solver capabilities versus CalculiX, Abaqus, MSC.Nastran, NASTRAN-95, and Samcef</p>
 
     <!-- Legend -->
     <div class="legend">
@@ -135,6 +135,7 @@
         <button class="filter-tab" onclick="filterCategory('analysis')">Analysis Types</button>
         <button class="filter-tab" onclick="filterCategory('materials')">Materials</button>
         <button class="filter-tab" onclick="filterCategory('solvers')">Solvers</button>
+        <button class="filter-tab" onclick="filterCategory('loading')">Loading & BCs</button>
         <button class="filter-tab" onclick="filterCategory('io')">Input/Output</button>
         <button class="filter-tab" onclick="filterCategory('advanced')">Advanced Features</button>
     </div>
@@ -150,20 +151,24 @@
                     <th>Abaqus</th>
                     <th>MSC.Nastran</th>
                     <th>NASTRAN-95</th>
+                    <th>Samcef</th>
+                    <th>pyNastran</th>
                 </tr>
             </thead>
             <tbody>
                 <!-- ELEMENT LIBRARY -->
                 <tr data-category="elements">
-                    <td colspan="6" class="category-header">🔩 Element Library</td>
+                    <td colspan="8" class="category-header">🔩 Element Library</td>
                 </tr>
                 <tr data-category="elements">
-                    <td colspan="6" class="subcategory-header">Truss/Rod Elements</td>
+                    <td colspan="8" class="subcategory-header">Truss/Rod Elements</td>
                 </tr>
                 <tr data-category="elements">
                     <td>T3D2 - 2-node 3D truss</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                     <td>-</td>
                     <td>-</td>
                     <td>-</td>
@@ -175,15 +180,19 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="elements">
-                    <td colspan="6" class="subcategory-header">Beam Elements</td>
+                    <td colspan="8" class="subcategory-header">Beam Elements</td>
                 </tr>
                 <tr data-category="elements">
                     <td>B31 - 2-node Euler-Bernoulli beam</td>
                     <td>✅</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                     <td>-</td>
                     <td>-</td>
                 </tr>
@@ -194,6 +203,8 @@
                     <td>✅</td>
                     <td>-</td>
                     <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="elements">
                     <td>CBEAM - General beam element</td>
@@ -202,15 +213,19 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="elements">
-                    <td colspan="6" class="subcategory-header">Shell Elements</td>
+                    <td colspan="8" class="subcategory-header">Shell Elements</td>
                 </tr>
                 <tr data-category="elements">
                     <td>S4 - 4-node shell</td>
-                    <td>📋</td>
+                    <td>🚧</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                     <td>-</td>
                     <td>-</td>
                 </tr>
@@ -221,6 +236,8 @@
                     <td>✅</td>
                     <td>-</td>
                     <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="elements">
                     <td>CQUAD4 - 4-node quadrilateral shell</td>
@@ -229,15 +246,19 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="elements">
-                    <td colspan="6" class="subcategory-header">Solid Elements</td>
+                    <td colspan="8" class="subcategory-header">Solid Elements</td>
                 </tr>
                 <tr data-category="elements">
                     <td>C3D8 - 8-node hexahedron</td>
                     <td>📋</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                     <td>-</td>
                     <td>-</td>
                 </tr>
@@ -248,6 +269,8 @@
                     <td>✅</td>
                     <td>-</td>
                     <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="elements">
                     <td>CHEXA - 8-node hexahedron</td>
@@ -256,14 +279,205 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>C3D4 - 4-node tetrahedron</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>C3D10 - 10-node tetrahedron</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>C3D6 - 6-node wedge</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>C3D15 - 15-node wedge</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td colspan="8" class="subcategory-header">2D Plane/Axisymmetric Elements</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>CPE3 - 3-node plane strain triangle</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>CPE4 - 4-node plane strain quad</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>CPS3 - 3-node plane stress triangle</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>CPS4 - 4-node plane stress quad</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>CAX3 - 3-node axisymmetric triangle</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>CAX4 - 4-node axisymmetric quad</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td colspan="8" class="subcategory-header">Membrane Elements</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>M3D3 - 3-node membrane triangle</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>M3D4 - 4-node membrane quad</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td colspan="8" class="subcategory-header">Special Elements</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>SPRING1 - Linear spring (1-DOF)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>SPRING2 - Nonlinear spring</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>DASHPOT - Linear dashpot</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>MASS - Point mass (1-node)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>GAP - 2-node gap element</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="elements">
+                    <td>Composite shells (layered)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
 
                 <!-- ANALYSIS TYPES -->
                 <tr data-category="analysis">
-                    <td colspan="6" class="category-header">📊 Analysis Types</td>
+                    <td colspan="8" class="category-header">📊 Analysis Types</td>
                 </tr>
                 <tr data-category="analysis">
-                    <td colspan="6" class="subcategory-header">Static Analysis</td>
+                    <td colspan="8" class="subcategory-header">Static Analysis</td>
                 </tr>
                 <tr data-category="analysis">
                     <td>Linear static</td>
@@ -272,6 +486,8 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="analysis">
                     <td>Nonlinear static (geometric)</td>
@@ -280,6 +496,8 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="analysis">
                     <td>Contact analysis</td>
@@ -288,9 +506,11 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="analysis">
-                    <td colspan="6" class="subcategory-header">Dynamic Analysis</td>
+                    <td colspan="8" class="subcategory-header">Dynamic Analysis</td>
                 </tr>
                 <tr data-category="analysis">
                     <td>Modal (eigenvalue)</td>
@@ -299,6 +519,8 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="analysis">
                     <td>Transient dynamic</td>
@@ -307,9 +529,11 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="analysis">
-                    <td colspan="6" class="subcategory-header">Thermal Analysis</td>
+                    <td colspan="8" class="subcategory-header">Thermal Analysis</td>
                 </tr>
                 <tr data-category="analysis">
                     <td>Steady-state heat transfer</td>
@@ -318,6 +542,8 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="analysis">
                     <td>Coupled thermo-mechanical</td>
@@ -326,11 +552,182 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Transient heat transfer</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td colspan="8" class="subcategory-header">Stability & Buckling</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Linear buckling (eigenvalue)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Nonlinear buckling (Riks)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td colspan="8" class="subcategory-header">Advanced Physics</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>CFD (incompressible)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>CFD (compressible)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Turbulence modeling</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Electromagnetics (magnetostatics)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Inductive heating</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Acoustics</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Electrostatics</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Seepage flow</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Shallow water</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Network analysis (hydraulic/aerodynamic)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td colspan="8" class="subcategory-header">Optimization</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Sensitivity analysis</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Robust design</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="analysis">
+                    <td>Green functions</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
 
                 <!-- MATERIALS -->
                 <tr data-category="materials">
-                    <td colspan="6" class="category-header">🧪 Material Models</td>
+                    <td colspan="8" class="category-header">🧪 Material Models</td>
                 </tr>
                 <tr data-category="materials">
                     <td>Isotropic elastic</td>
@@ -339,6 +736,8 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="materials">
                     <td>Orthotropic elastic</td>
@@ -347,6 +746,8 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="materials">
                     <td>Elastoplastic (von Mises)</td>
@@ -355,6 +756,8 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="materials">
                     <td>Hyperelastic (Neo-Hookean)</td>
@@ -363,14 +766,132 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="materials">
+                    <td>Anisotropic elastic</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="materials">
+                    <td colspan="8" class="subcategory-header">Nonlinear Material Models</td>
+                </tr>
+                <tr data-category="materials">
+                    <td>Deformation plasticity (Ramberg-Osgood)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="materials">
+                    <td>Incremental plasticity (large deformation)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="materials">
+                    <td>Isotropic hardening</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="materials">
+                    <td>Kinematic hardening</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="materials">
+                    <td>Creep (isotropic)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="materials">
+                    <td>Viscoplasticity</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="materials">
+                    <td>Single crystal plasticity</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="materials">
+                    <td colspan="8" class="subcategory-header">Special Material Behaviors</td>
+                </tr>
+                <tr data-category="materials">
+                    <td>Fiber reinforced composite</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="materials">
+                    <td>Compression/tension-only material</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="materials">
+                    <td>User-defined material (UMAT)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
 
                 <!-- SOLVERS -->
                 <tr data-category="solvers">
-                    <td colspan="6" class="category-header">⚙️ Solution Methods</td>
+                    <td colspan="8" class="category-header">⚙️ Solution Methods</td>
                 </tr>
                 <tr data-category="solvers">
-                    <td colspan="6" class="subcategory-header">Linear Solvers</td>
+                    <td colspan="8" class="subcategory-header">Linear Solvers</td>
                 </tr>
                 <tr data-category="solvers">
                     <td>Direct (LU decomposition)</td>
@@ -379,6 +900,8 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="solvers">
                     <td>Iterative (Conjugate Gradient)</td>
@@ -387,6 +910,8 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="solvers">
                     <td>Iterative (GMRES)</td>
@@ -395,9 +920,11 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="solvers">
-                    <td colspan="6" class="subcategory-header">Matrix Storage</td>
+                    <td colspan="8" class="subcategory-header">Matrix Storage</td>
                 </tr>
                 <tr data-category="solvers">
                     <td>Dense format</td>
@@ -406,6 +933,8 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="solvers">
                     <td>Sparse (CSR format)</td>
@@ -414,14 +943,243 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="solvers">
+                    <td colspan="8" class="subcategory-header">Solver Libraries</td>
+                </tr>
+                <tr data-category="solvers">
+                    <td>SPOOLES direct solver</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="solvers">
+                    <td>PARDISO direct solver</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="solvers">
+                    <td>PaStiX direct solver</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+
+                <!-- LOADING & BOUNDARY CONDITIONS -->
+                <tr data-category="loading">
+                    <td colspan="8" class="category-header">🎯 Loading & Boundary Conditions</td>
+                </tr>
+                <tr data-category="loading">
+                    <td colspan="8" class="subcategory-header">Mechanical Loads</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Concentrated forces (nodal)</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Distributed pressure</td>
+                    <td>🚧</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Centrifugal loading</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Gravity loading</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Volumetric loading (body force)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Temperature loading</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Residual stress</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="loading">
+                    <td colspan="8" class="subcategory-header">Thermal Loads</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Concentrated heat flux</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Distributed flux</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Convection boundary condition</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Radiation boundary condition</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="loading">
+                    <td colspan="8" class="subcategory-header">Constraints</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Single point constraints (SPC)</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Multiple point constraints (MPC)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Cyclic symmetry</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Tied contact (node-to-face)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Penalty contact (face-to-face)</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Rigid body motion</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="loading">
+                    <td>Pre-tension</td>
+                    <td>📋</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
 
                 <!-- INPUT/OUTPUT -->
                 <tr data-category="io">
-                    <td colspan="6" class="category-header">💾 Input/Output Formats</td>
+                    <td colspan="8" class="category-header">💾 Input/Output Formats</td>
                 </tr>
                 <tr data-category="io">
-                    <td colspan="6" class="subcategory-header">Input Formats</td>
+                    <td colspan="8" class="subcategory-header">Input Formats</td>
                 </tr>
                 <tr data-category="io">
                     <td>CalculiX INP</td>
@@ -430,6 +1188,8 @@
                     <td>❌</td>
                     <td>❌</td>
                     <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="io">
                     <td>Abaqus INP</td>
@@ -438,6 +1198,8 @@
                     <td>✅</td>
                     <td>❌</td>
                     <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="io">
                     <td>Nastran BDF</td>
@@ -446,9 +1208,11 @@
                     <td>❌</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="io">
-                    <td colspan="6" class="subcategory-header">Output Formats</td>
+                    <td colspan="8" class="subcategory-header">Output Formats</td>
                 </tr>
                 <tr data-category="io">
                     <td>FRD (results)</td>
@@ -457,6 +1221,8 @@
                     <td>❌</td>
                     <td>❌</td>
                     <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="io">
                     <td>VTK/VTU (ParaView)</td>
@@ -465,6 +1231,8 @@
                     <td>❌</td>
                     <td>❌</td>
                     <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="io">
                     <td>DAT (text results)</td>
@@ -473,11 +1241,53 @@
                     <td>❌</td>
                     <td>❌</td>
                     <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="io">
+                    <td>OP2 (Nastran binary output)</td>
+                    <td>📋</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="io">
+                    <td>OP4 (Nastran matrix output)</td>
+                    <td>📋</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="io">
+                    <td>XDB (Extended database)</td>
+                    <td>📋</td>
+                    <td>❌</td>
+                    <td>❌</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr data-category="io">
+                    <td>HDF5 (Hierarchical data)</td>
+                    <td>📋</td>
+                    <td>❌</td>
+                    <td>✅</td>
+                    <td>✅</td>
+                    <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
 
                 <!-- ADVANCED FEATURES -->
                 <tr data-category="advanced">
-                    <td colspan="6" class="category-header">🚀 Advanced Features</td>
+                    <td colspan="8" class="category-header">🚀 Advanced Features</td>
                 </tr>
                 <tr data-category="advanced">
                     <td>Multi-threading</td>
@@ -486,6 +1296,8 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="advanced">
                     <td>GPU acceleration</td>
@@ -494,6 +1306,8 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="advanced">
                     <td>Python scripting/API</td>
@@ -502,6 +1316,8 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>❌</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
                 <tr data-category="advanced">
                     <td>Restart capability</td>
@@ -510,6 +1326,8 @@
                     <td>✅</td>
                     <td>✅</td>
                     <td>✅</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
             </tbody>
         </table>
@@ -522,29 +1340,39 @@
     
     <h3>✅ Completed (Current Status)</h3>
     <ul>
-        <li><strong>Elements:</strong> T3D2 (truss), B31 (beam)</li>
-        <li><strong>Analysis:</strong> Linear static (partial implementation)</li>
-        <li><strong>Materials:</strong> Isotropic elastic</li>
-        <li><strong>Solvers:</strong> Dense direct (LU), Sparse CSR with penalty method</li>
-        <li><strong>I/O:</strong> INP parser (99.6% success on 1,133 examples), FRD/DAT writer, VTK/VTU export</li>
-        <li><strong>Infrastructure:</strong> Rust library, Python bindings, FastAPI validation dashboard</li>
+        <li><strong>Elements:</strong> T3D2 (truss), B31 (beam), S4 (shell - stiffness complete)</li>
+        <li><strong>Analysis:</strong> Linear static (assembly, solve, postprocessing)</li>
+        <li><strong>Materials:</strong> Isotropic elastic (E, ν, ρ)</li>
+        <li><strong>Solvers:</strong> Dense direct (LU), Sparse CSR format</li>
+        <li><strong>Loading:</strong> Concentrated forces (nodal), Distributed pressure (Phases 1-2 complete)</li>
+        <li><strong>I/O:</strong> INP parser (99.6% success on 1,133 examples), FRD/DAT/VTK writer</li>
+        <li><strong>Infrastructure:</strong> Rust library, Python bindings, FastAPI validation dashboard, 200+ unit tests</li>
+        <li><strong>Validation:</strong> Beam < 1% error, Shell membrane/bending integrated, Pressure 0% error</li>
     </ul>
 
-    <h3>🚧 In Progress</h3>
+    <h3>🚧 In Progress (Active Development)</h3>
     <ul>
-        <li>Linear static analysis (full validation)</li>
-        <li>Sparse iterative solvers (Conjugate Gradient)</li>
-        <li>Abaqus INP compatibility improvements</li>
+        <li><strong>Distributed Loads:</strong> Assembly integration (Phase 3), end-to-end tests (Phase 5)</li>
+        <li><strong>S4 Shell:</strong> Integration tests, multi-element mesh validation</li>
     </ul>
 
-    <h3>📋 High Priority (Next 3-6 months)</h3>
+    <h3>📋 High Priority (Next 1-3 months)</h3>
     <ol>
-        <li><strong>Elements:</strong> S4 shell, C3D8 hexahedron</li>
-        <li><strong>Analysis:</strong> Modal analysis (eigenvalues)</li>
-        <li><strong>Loads:</strong> Distributed loads, pressure</li>
-        <li><strong>Solvers:</strong> GMRES, preconditioners</li>
-        <li><strong>Materials:</strong> Orthotropic elastic</li>
-        <li><strong>Validation:</strong> Run solver on all 1,133 example files</li>
+        <li><strong>Complete Distributed Loads:</strong> Assembly integration, integration tests</li>
+        <li><strong>Modal Analysis:</strong> Eigenvalue solver for natural frequencies</li>
+        <li><strong>Complete Linear Static Validation:</strong> Run all 1,133 example files through solver</li>
+        <li><strong>Sparse Iterative Solvers:</strong> Conjugate Gradient, GMRES</li>
+        <li><strong>Elements:</strong> S3 (3-node shell), C3D8 (8-node hex), S8 (8-node shell)</li>
+        <li><strong>Loading:</strong> Centrifugal, gravity, temperature</li>
+    </ol>
+
+    <h3>📋 Medium Priority (3-6 months)</h3>
+    <ol>
+        <li><strong>More Element Types:</strong> C3D4/C3D10 (tets), C3D6/C3D15 (wedges), plane strain/stress</li>
+        <li><strong>Materials:</strong> Orthotropic elastic, von Mises plasticity</li>
+        <li><strong>Thermal Analysis:</strong> Steady-state and transient heat transfer</li>
+        <li><strong>Frequency Analysis:</strong> Harmonic response</li>
+        <li><strong>Boundary Conditions:</strong> MPC, cyclic symmetry, contact</li>
     </ol>
 
     <h3>📋 Medium Priority (6-12 months)</h3>

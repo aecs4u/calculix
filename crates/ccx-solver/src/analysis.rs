@@ -263,13 +263,19 @@ impl AnalysisPipeline {
                         }
                     }
 
-                    // Step 4: Assemble and solve (only for truss elements currently)
-                    let has_truss_elements = mesh
+                    // Step 4: Assemble and solve (supports T3D2, B31, S4, C3D8)
+                    let has_supported_elements = mesh
                         .elements
                         .values()
-                        .any(|e| matches!(e.element_type, crate::mesh::ElementType::T3D2));
+                        .any(|e| matches!(
+                            e.element_type,
+                            crate::mesh::ElementType::T3D2
+                                | crate::mesh::ElementType::B31
+                                | crate::mesh::ElementType::S4
+                                | crate::mesh::ElementType::C3D8
+                        ));
 
-                    if has_truss_elements {
+                    if has_supported_elements {
                         match crate::assembly::GlobalSystem::assemble(
                             &mesh, &materials, &bcs, 0.001,
                         ) {
@@ -280,7 +286,7 @@ impl AnalysisPipeline {
                             Err(e) => format!(" [ASSEMBLY FAILED: {}]", e),
                         }
                     } else {
-                        " [solver supports T3D2 truss elements only]".to_string()
+                        " [solver supports T3D2, B31, S4, C3D8 elements only]".to_string()
                     }
                 }
                 Err(_) => " [no materials defined]".to_string(),

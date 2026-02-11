@@ -296,6 +296,46 @@ impl SparseGlobalSystem {
         Ok(lu)
     }
 
+    /// Export the assembled system as backend-agnostic `LinearSystemData`.
+    ///
+    /// Extracts COO triplets from the CSR sparse matrix format.
+    pub fn to_linear_system_data(&self) -> crate::backend::LinearSystemData {
+        let mut rows = Vec::new();
+        let mut cols = Vec::new();
+        let mut vals = Vec::new();
+
+        for (row_idx, row) in self.stiffness.row_iter().enumerate() {
+            for (&col_idx, &value) in row.col_indices().iter().zip(row.values().iter()) {
+                rows.push(row_idx);
+                cols.push(col_idx);
+                vals.push(value);
+            }
+        }
+
+        crate::backend::LinearSystemData {
+            stiffness: crate::backend::SparseTripletsF64 {
+                nrows: self.num_dofs,
+                ncols: self.num_dofs,
+                row_indices: rows,
+                col_indices: cols,
+                values: vals,
+            },
+            force: self.force.clone(),
+            num_dofs: self.num_dofs,
+            constrained_dofs: self.constrained_dofs.clone(),
+        }
+    }
+
+    /// Solve using a specified solver backend.
+    pub fn solve_with_backend(
+        &self,
+        backend: &dyn crate::backend::LinearSolver,
+    ) -> Result<DVector<f64>, String> {
+        let data = self.to_linear_system_data();
+        let (u, _info) = backend.solve_linear(&data).map_err(|e| e.0)?;
+        Ok(u)
+    }
+
     /// Validate the sparse system
     pub fn validate(&self) -> Result<(), String> {
         // Check for zero diagonal entries (excluding constrained DOFs)

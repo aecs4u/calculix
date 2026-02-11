@@ -1,10 +1,11 @@
 """CalculiX Rust Solver Validation API."""
 
 from datetime import datetime
+from pathlib import Path
 from typing import List
 
-from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile, File
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import desc, func
@@ -20,6 +21,11 @@ from .database import (
     ValidationResult,
     get_db,
     init_db,
+)
+from .nastran_converter import (
+    BdfToInpConverter,
+    Op2ResultReader,
+    is_pynastran_available,
 )
 
 # Initialize database
@@ -165,6 +171,85 @@ async def modules_page(request: Request, db: Session = Depends(get_db)):
     )
 
 
+@app.get("/modules/{module_code}", response_class=HTMLResponse)
+async def module_detail_page(request: Request, module_code: str, db: Session = Depends(get_db)):
+    """Module detail page with test cases, files, and KPIs."""
+    module = db.query(TestModule).filter(TestModule.name == module_code).first()
+    if not module:
+        raise HTTPException(status_code=404, detail="Module not found")
+
+    # Get test cases with their latest runs
+    test_cases_with_runs = []
+    for tc in module.test_cases:
+        last_run = tc.runs[-1] if tc.runs else None
+        test_cases_with_runs.append({
+            "test_case": tc,
+            "last_run": last_run,
+        })
+
+    # Get latest KPI
+    latest_kpi = db.query(KPI).order_by(desc(KPI.date)).first()
+
+    return templates.TemplateResponse(
+        "module_detail.html",
+        {
+            "request": request,
+            "module": module,
+            "test_cases": test_cases_with_runs,
+            "latest_kpi": latest_kpi,
+        },
+    )
+
+
+@app.get("/modules/{module_code}/{test_code}", response_class=HTMLResponse)
+async def test_case_detail_page(
+    request: Request, module_code: str, test_code: str, db: Session = Depends(get_db)
+):
+    """Test case detail page with runs, files, and KPIs."""
+    from urllib.parse import unquote
+
+    # URL decode the parameters
+    module_code = unquote(module_code)
+    test_code = unquote(test_code)
+
+    # Get module
+    module = db.query(TestModule).filter(TestModule.name == module_code).first()
+    if not module:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Module '{module_code}' not found"
+        )
+
+    # Get test case
+    test_case = (
+        db.query(TestCase)
+        .filter(TestCase.module_id == module.id, TestCase.name == test_code)
+        .first()
+    )
+    if not test_case:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Test case '{test_code}' not found in module '{module_code}'"
+        )
+
+    # Get all test runs (sorted by date, newest first)
+    test_runs = sorted(test_case.runs, key=lambda r: r.run_date, reverse=True)
+
+    # Get latest KPI
+    latest_kpi = db.query(KPI).order_by(desc(KPI.date)).first()
+
+    return templates.TemplateResponse(
+        "test_case_detail.html",
+        {
+            "request": request,
+            "module": module,
+            "test_case": test_case,
+            "test_runs": test_runs,
+            "latest_kpi": latest_kpi,
+        },
+    )
+
+
 @app.get("/examples", response_class=HTMLResponse)
 async def examples_page(request: Request, db: Session = Depends(get_db)):
     """Examples overview page."""
@@ -202,6 +287,28 @@ async def examples_page(request: Request, db: Session = Depends(get_db)):
 
     return templates.TemplateResponse(
         "examples.html", {"request": request, "examples": examples_with_stats}
+    )
+
+
+@app.get("/examples/{example_id}", response_class=HTMLResponse)
+async def example_detail_page(request: Request, example_id: int, db: Session = Depends(get_db)):
+    """Example detail page with file links."""
+    example = db.query(Example).filter(Example.id == example_id).first()
+    if not example:
+        raise HTTPException(status_code=404, detail="Example not found")
+
+    # Get validation results for this example
+    validations = db.query(ValidationResult).filter(
+        ValidationResult.example_id == example_id
+    ).order_by(ValidationResult.run_date.desc()).all()
+
+    return templates.TemplateResponse(
+        "example_detail.html",
+        {
+            "request": request,
+            "example": example,
+            "validations": validations,
+        },
     )
 
 
@@ -510,6 +617,156 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
         supported_elements=supported_elements,
         lines_of_code=latest_kpi.lines_of_code if latest_kpi else 0,
     )
+
+
+# ============================================================================
+# API Endpoints - Nastran Conversion (Phase 2 & 3)
+# ============================================================================
+
+
+@app.get("/api/nastran/status")
+async def nastran_status():
+    """Check if pyNastran is available."""
+    return {
+        "pynastran_available": is_pynastran_available(),
+        "bdf_converter": is_pynastran_available(),
+        "op2_reader": is_pynastran_available(),
+    }
+
+
+@app.post("/api/nastran/convert/bdf-to-inp")
+async def convert_bdf_to_inp(file: UploadFile = File(...)):
+    """
+    Convert uploaded BDF file to CalculiX INP format.
+
+    Phase 2: BDF → INP converter endpoint
+    """
+    if not is_pynastran_available():
+        raise HTTPException(
+            status_code=503,
+            detail="pyNastran is not available. Install with: pip install pyNastran",
+        )
+
+    # Save uploaded file
+    upload_dir = Path("uploads")
+    upload_dir.mkdir(exist_ok=True)
+
+    bdf_path = upload_dir / file.filename
+    with open(bdf_path, "wb") as f:
+        content = await file.read()
+        f.write(content)
+
+    # Convert to INP
+    inp_filename = bdf_path.stem + ".inp"
+    inp_path = upload_dir / inp_filename
+
+    try:
+        stats = BdfToInpConverter.convert_file(str(bdf_path), str(inp_path))
+
+        return {
+            "status": "success",
+            "input_file": file.filename,
+            "output_file": inp_filename,
+            "download_url": f"/api/nastran/download/{inp_filename}",
+            "statistics": stats,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Conversion failed: {str(e)}")
+
+
+@app.get("/api/nastran/download/{filename}")
+async def download_converted_file(filename: str):
+    """Download converted INP file."""
+    file_path = Path("uploads") / filename
+
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    return FileResponse(
+        file_path, media_type="text/plain", filename=filename
+    )
+
+
+@app.post("/api/nastran/read/op2")
+async def read_op2_results(file: UploadFile = File(...)):
+    """
+    Read Nastran OP2 binary result file.
+
+    Phase 3: OP2 reader endpoint for validation
+    """
+    if not is_pynastran_available():
+        raise HTTPException(
+            status_code=503,
+            detail="pyNastran is not available. Install with: pip install pyNastran",
+        )
+
+    # Save uploaded file
+    upload_dir = Path("uploads")
+    upload_dir.mkdir(exist_ok=True)
+
+    op2_path = upload_dir / file.filename
+    with open(op2_path, "wb") as f:
+        content = await file.read()
+        f.write(content)
+
+    try:
+        # Read OP2 data
+        data = Op2ResultReader.read_results(str(op2_path))
+
+        # Extract summary statistics
+        num_displacements = len(data.get("displacements", {}))
+        num_stresses = len(data.get("stresses", {}))
+        num_eigenvalues = len(data.get("eigenvalues", []))
+
+        return {
+            "status": "success",
+            "input_file": file.filename,
+            "statistics": {
+                "num_displacements": num_displacements,
+                "num_stresses": num_stresses,
+                "num_eigenvalues": num_eigenvalues,
+            },
+            "data": data,  # Full data for validation
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read OP2: {str(e)}")
+
+
+@app.post("/api/nastran/extract/frequencies")
+async def extract_modal_frequencies(file: UploadFile = File(...)):
+    """
+    Extract natural frequencies from modal analysis OP2 file.
+
+    Returns frequencies in Hz for comparison with CalculiX results.
+    """
+    if not is_pynastran_available():
+        raise HTTPException(
+            status_code=503,
+            detail="pyNastran is not available. Install with: pip install pyNastran",
+        )
+
+    # Save uploaded file
+    upload_dir = Path("uploads")
+    upload_dir.mkdir(exist_ok=True)
+
+    op2_path = upload_dir / file.filename
+    with open(op2_path, "wb") as f:
+        content = await file.read()
+        f.write(content)
+
+    try:
+        frequencies = Op2ResultReader.extract_frequencies(str(op2_path))
+
+        return {
+            "status": "success",
+            "input_file": file.filename,
+            "num_modes": len(frequencies),
+            "frequencies_hz": frequencies,
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to extract frequencies: {str(e)}"
+        )
 
 
 if __name__ == "__main__":

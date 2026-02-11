@@ -7,12 +7,15 @@ use std::collections::BTreeMap;
 
 pub mod analysis;
 pub mod assembly;
+pub mod backend;
 pub mod bc_builder;
 pub mod boundary_conditions;
+pub mod distributed_loads;
 pub mod elements;
 pub mod materials;
 pub mod mesh;
 pub mod mesh_builder;
+pub mod modal_solver;
 pub mod ported;
 pub mod postprocess;
 pub mod sets;
@@ -20,12 +23,18 @@ pub mod sparse_assembly;
 
 pub use analysis::{AnalysisConfig, AnalysisPipeline, AnalysisResults, AnalysisType};
 pub use assembly::GlobalSystem;
+pub use backend::{
+    default_backend, EigenResult, EigenSolver, EigenSystemData, LinearSolver, LinearSystemData,
+    NativeBackend, PetscBackend, SolveInfo, SolverBackend, SparseTripletsF64,
+};
 pub use bc_builder::BCBuilder;
 pub use boundary_conditions::{BoundaryConditions, ConcentratedLoad, DisplacementBC, DofId};
+pub use distributed_loads::DistributedLoadConverter;
 pub use elements::{Beam31, BeamSection, Element as ElementTrait, SectionProperties, Truss2D};
 pub use materials::{Material, MaterialLibrary, MaterialModel, MaterialStatistics};
 pub use mesh::{Element, ElementType, Mesh, MeshStatistics, Node};
 pub use mesh_builder::MeshBuilder;
+pub use modal_solver::{ModalResults, ModalSolver};
 pub use ported::SUPERSEDED_FORTRAN_FILES;
 pub use postprocess::{
     compute_effective_strain, compute_mises_stress, compute_statistics, process_integration_points,

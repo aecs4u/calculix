@@ -7,8 +7,13 @@ build = "build.rs"
 [dependencies]
 ccx-inp = { path = "../ccx-inp" }
 ccx-model = { path = "../ccx-model" }
-nalgebra = { version = "0.33", features = ["sparse"] }
+nalgebra = { version = "0.34", features = ["sparse"] }
 nalgebra-sparse = "0.10"
+nalgebra-lapack = "0.27"
+
+[features]
+default = []
+petsc = []
 
 [[bin]]
 name = "ccx-solver"

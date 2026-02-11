@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}{{ test_case.name }} - {{ module.name }} - CalculiX Validation{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Navigation -->
+<div style="margin-bottom: 20px;">
+    <a href="/modules" style="color: #3498db; text-decoration: none;">Modules</a>
+    <span style="color: #7f8c8d;"> / </span>
+    <a href="/modules/{{ module.name }}" style="color: #3498db; text-decoration: none;">{{ module.name }}</a>
+    <span style="color: #7f8c8d;"> / </span>
+    <span style="color: #ecf0f1;">{{ test_case.name }}</span>
+</div>
+
+<!-- Test Case Header -->
+<div class="content-box">
+    <h1>{{ test_case.name }}</h1>
+
+    {% if test_case.description %}
+    <p style="color: #7f8c8d; margin-bottom: 20px;">{{ test_case.description }}</p>
+    {% endif %}
+
+    <!-- Test Case Metadata -->
+    <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin: 20px 0;">
+        <div class="stat-card">
+            <div class="label">Module</div>
+            <div class="value">
+                <a href="/modules/{{ module.name }}" style="color: #3498db; text-decoration: none;">
+                    {{ module.name }}
+                </a>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Test Type</div>
+            <div class="value"><code>{{ test_case.test_type or 'N/A' }}</code></div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Total Runs</div>
+            <div class="value">{{ test_runs|length }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Latest Status</div>
+            <div class="value">
+                {% if test_runs %}
+                    {% if test_runs[0].passed %}
+                    <span class="status-pass">✓ PASS</span>
+                    {% else %}
+                    <span class="status-fail">✗ FAIL</span>
+                    {% endif %}
+                {% else %}
+                <span style="color: #95a5a6;">Not run</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- KPIs Section -->
+    {% if latest_kpi %}
+    <h2>📊 Latest KPIs</h2>
+    <div style="background: #2c3e50; padding: 20px; border-radius: 5px; margin: 20px 0;">
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+            <div style="text-align: center;">
+                <div style="color: #95a5a6; font-size: 0.9em; margin-bottom: 5px;">Tests Passing</div>
+                <div style="color: #2ecc71; font-size: 1.5em; font-weight: bold;">
+                    <a href="/" style="color: #2ecc71; text-decoration: none;">
+                        {{ latest_kpi.passing_tests }} / {{ latest_kpi.total_tests }}
+                    </a>
+                </div>
+            </div>
+            <div style="text-align: center;">
+                <div style="color: #95a5a6; font-size: 0.9em; margin-bottom: 5px;">Pass Rate</div>
+                <div style="color: #3498db; font-size: 1.5em; font-weight: bold;">
+                    <a href="/" style="color: #3498db; text-decoration: none;">
+                        {{ "%.1f"|format(latest_kpi.test_coverage_percent or 0) }}%
+                    </a>
+                </div>
+            </div>
+            <div style="text-align: center;">
+                <div style="color: #95a5a6; font-size: 0.9em; margin-bottom: 5px;">Element Types</div>
+                <div style="color: #f39c12; font-size: 1.5em; font-weight: bold;">
+                    <a href="/features" style="color: #f39c12; text-decoration: none;">
+                        {{ latest_kpi.num_element_types or 0 }}
+                    </a>
+                </div>
+            </div>
+            <div style="text-align: center;">
+                <div style="color: #95a5a6; font-size: 0.9em; margin-bottom: 5px;">Avg Test Time</div>
+                <div style="color: #9b59b6; font-size: 1.5em; font-weight: bold;">
+                    <a href="/" style="color: #9b59b6; text-decoration: none;">
+                        {{ "%.0f"|format(latest_kpi.avg_test_time_ms or 0) }} ms
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 15px; color: #95a5a6; font-size: 0.9em;">
+            Last updated: {{ latest_kpi.date.strftime('%Y-%m-%d %H:%M:%S') }}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Latest Run Files Section -->
+    {% if test_runs %}
+    <h2>📁 Latest Run Files</h2>
+    <div style="background: #2c3e50; padding: 20px; border-radius: 5px; margin: 20px 0;">
+        {% if test_runs[0].input_file %}
+        <div style="margin-bottom: 15px;">
+            <strong style="color: #3498db;">Input File:</strong>
+            <div style="margin-top: 5px;">
+                <a href="/api/test-runs/{{ test_runs[0].id }}/files/input"
+                   style="color: #2ecc71; text-decoration: none; font-family: monospace;"
+                   download>
+                    📄 {{ test_runs[0].input_file.split('/')[-1] }}
+                </a>
+                <span style="color: #95a5a6; margin-left: 10px;">
+                    ({{ test_runs[0].input_file }})
+                </span>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if test_runs[0].output_file %}
+        <div style="margin-bottom: 15px;">
+            <strong style="color: #3498db;">Output File:</strong>
+            <div style="margin-top: 5px;">
+                <a href="/api/test-runs/{{ test_runs[0].id }}/files/output"
+                   style="color: #2ecc71; text-decoration: none; font-family: monospace;"
+                   download>
+                    📊 {{ test_runs[0].output_file.split('/')[-1] }}
+                </a>
+                <span style="color: #95a5a6; margin-left: 10px;">
+                    ({{ test_runs[0].output_file }})
+                </span>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not test_runs[0].input_file and not test_runs[0].output_file %}
+        <div style="color: #95a5a6;">
+            No files available for the latest run.
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Test Runs History -->
+    <h2>🔄 Test Runs History</h2>
+
+    {% if test_runs %}
+    <table>
+        <thead>
+            <tr>
+                <th>Run Date</th>
+                <th>Status</th>
+                <th>Execution Time</th>
+                <th>Files</th>
+                <th>Error Message</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for run in test_runs %}
+            <tr>
+                <td class="timestamp">{{ run.run_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td>
+                    {% if run.passed %}
+                    <span class="status-pass">✓ PASS</span>
+                    {% else %}
+                    <span class="status-fail">✗ FAIL</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if run.execution_time_ms %}
+                    {{ "%.2f"|format(run.execution_time_ms) }} ms
+                    {% else %}
+                    <span style="color: #95a5a6;">N/A</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <!-- Input/Output File Links -->
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        {% if run.input_file %}
+                        <div>
+                            <a href="/api/test-runs/{{ run.id }}/files/input"
+                               style="color: #3498db; text-decoration: none; font-family: monospace; font-size: 0.9em;"
+                               download>
+                                📄 {{ run.input_file.split('/')[-1] }}
+                            </a>
+                        </div>
+                        {% endif %}
+                        {% if run.output_file %}
+                        <div>
+                            <a href="/api/test-runs/{{ run.id }}/files/output"
+                               style="color: #2ecc71; text-decoration: none; font-family: monospace; font-size: 0.9em;"
+                               download>
+                                📊 {{ run.output_file.split('/')[-1] }}
+                            </a>
+                        </div>
+                        {% endif %}
+                        {% if not run.input_file and not run.output_file %}
+                        <span style="color: #95a5a6; font-size: 0.9em;">No files</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td>
+                    {% if run.error_message %}
+                    <div style="color: #e74c3c; font-size: 0.85em; max-width: 400px;">
+                        {{ run.error_message[:200] }}{% if run.error_message|length > 200 %}...{% endif %}
+                    </div>
+                    {% else %}
+                    <span style="color: #95a5a6;">-</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #95a5a6; padding: 20px; text-align: center;">
+        No test runs available for this test case.
+    </p>
+    {% endif %}
+</div>
+
+<style>
+.stat-card {
+    background: #34495e;
+    padding: 15px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.stat-card .label {
+    color: #95a5a6;
+    font-size: 0.9em;
+    margin-bottom: 5px;
+}
+
+.stat-card .value {
+    color: #ecf0f1;
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+.status-pass {
+    color: #2ecc71;
+    font-weight: bold;
+}
+
+.status-fail {
+    color: #e74c3c;
+    font-weight: bold;
+}
+
+.timestamp {
+    color: #95a5a6;
+    font-size: 0.9em;
+}
+</style>
+{% endblock %}

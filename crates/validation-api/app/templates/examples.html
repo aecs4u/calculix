@@ -94,7 +94,11 @@
                 data-elements="{{ item.example.num_elements or 0 }}"
                 data-max-error="{{ item.max_error_percent }}"
                 data-validation-status="{% if item.all_passed and item.num_validations > 0 %}passed{% elif item.num_validations > 0 %}failed{% else %}not-run{% endif %}">
-                <td><strong>{{ item.example.name }}</strong></td>
+                <td>
+                    <a href="/examples/{{ item.example.id }}" style="color: #3498db; text-decoration: none;">
+                        <strong>{{ item.example.name }}</strong>
+                    </a>
+                </td>
                 <td><code>{{ item.example.element_type or 'N/A' }}</code></td>
                 <td>{{ item.example.num_nodes or 'N/A' }}</td>
                 <td>{{ item.example.num_elements or 'N/A' }}</td>

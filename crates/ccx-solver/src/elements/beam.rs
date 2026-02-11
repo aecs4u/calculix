@@ -295,6 +295,103 @@ impl Beam31 {
 
         Ok(k)
     }
+
+    /// Compute the local mass matrix (12x12) in the local coordinate system
+    ///
+    /// The consistent mass matrix for Euler-Bernoulli beam combines:
+    /// - Axial mass (translational)
+    /// - Bending mass (translational + rotational coupling)
+    /// - Torsional mass (rotational)
+    ///
+    /// # Theory
+    /// The consistent mass matrix is derived from:
+    /// M = ∫ ρ * N^T * N dx
+    ///
+    /// where N are the shape functions and ρ is the material density.
+    ///
+    /// # DOF Ordering (local coordinates)
+    /// - DOF 0, 6: Axial displacement (ux)
+    /// - DOF 1, 7: Transverse displacement y (uy)
+    /// - DOF 2, 8: Transverse displacement z (uz)
+    /// - DOF 3, 9: Torsion (θx)
+    /// - DOF 4, 10: Bending rotation about y (θy)
+    /// - DOF 5, 11: Bending rotation about z (θz)
+    fn local_mass(&self, length: f64, material: &Material) -> Result<SMatrix<f64, 12, 12>, String> {
+        let rho = material.density
+            .ok_or("Material missing density (required for mass matrix)")?;
+        let a = self.section.area;
+        let iyy = self.section.iyy;
+        let izz = self.section.izz;
+        let l = length;
+
+        // Initialize 12x12 mass matrix
+        let mut m = SMatrix::<f64, 12, 12>::zeros();
+
+        // Axial mass (DOFs 0, 6) - consistent mass formulation
+        let m_axial = rho * a * l / 6.0;
+        m[(0, 0)] = 2.0 * m_axial;
+        m[(0, 6)] = m_axial;
+        m[(6, 0)] = m_axial;
+        m[(6, 6)] = 2.0 * m_axial;
+
+        // Torsional mass (DOFs 3, 9) - using polar moment of inertia
+        let ip = iyy + izz; // Polar moment of inertia
+        let m_torsion = rho * ip * l / 6.0;
+        m[(3, 3)] = 2.0 * m_torsion;
+        m[(3, 9)] = m_torsion;
+        m[(9, 3)] = m_torsion;
+        m[(9, 9)] = 2.0 * m_torsion;
+
+        // Bending in XY plane (DOFs 1, 5, 7, 11)
+        // Consistent mass matrix with translational-rotational coupling
+        let m_coeff = rho * a * l / 420.0;
+
+        // Translational DOFs (1, 7)
+        m[(1, 1)] = 156.0 * m_coeff;
+        m[(1, 5)] = 22.0 * m_coeff * l;
+        m[(1, 7)] = 54.0 * m_coeff;
+        m[(1, 11)] = -13.0 * m_coeff * l;
+
+        m[(7, 1)] = 54.0 * m_coeff;
+        m[(7, 5)] = 13.0 * m_coeff * l;
+        m[(7, 7)] = 156.0 * m_coeff;
+        m[(7, 11)] = -22.0 * m_coeff * l;
+
+        // Rotational DOFs (5, 11)
+        m[(5, 1)] = 22.0 * m_coeff * l;
+        m[(5, 5)] = 4.0 * m_coeff * l * l;
+        m[(5, 7)] = 13.0 * m_coeff * l;
+        m[(5, 11)] = -3.0 * m_coeff * l * l;
+
+        m[(11, 1)] = -13.0 * m_coeff * l;
+        m[(11, 5)] = -3.0 * m_coeff * l * l;
+        m[(11, 7)] = -22.0 * m_coeff * l;
+        m[(11, 11)] = 4.0 * m_coeff * l * l;
+
+        // Bending in XZ plane (DOFs 2, 4, 8, 10)
+        // Same pattern as XY plane, but with negative signs for θy
+        m[(2, 2)] = 156.0 * m_coeff;
+        m[(2, 4)] = -22.0 * m_coeff * l;
+        m[(2, 8)] = 54.0 * m_coeff;
+        m[(2, 10)] = 13.0 * m_coeff * l;
+
+        m[(8, 2)] = 54.0 * m_coeff;
+        m[(8, 4)] = -13.0 * m_coeff * l;
+        m[(8, 8)] = 156.0 * m_coeff;
+        m[(8, 10)] = 22.0 * m_coeff * l;
+
+        m[(4, 2)] = -22.0 * m_coeff * l;
+        m[(4, 4)] = 4.0 * m_coeff * l * l;
+        m[(4, 8)] = -13.0 * m_coeff * l;
+        m[(4, 10)] = -3.0 * m_coeff * l * l;
+
+        m[(10, 2)] = 13.0 * m_coeff * l;
+        m[(10, 4)] = -3.0 * m_coeff * l * l;
+        m[(10, 8)] = 22.0 * m_coeff * l;
+        m[(10, 10)] = 4.0 * m_coeff * l * l;
+
+        Ok(m)
+    }
 }
 
 impl Element for Beam31 {
@@ -324,6 +421,26 @@ impl Element for Beam31 {
             }
         }
         indices
+    }
+
+    fn mass_matrix(
+        &self,
+        nodes: &[Node],
+        material: &Material,
+    ) -> Result<DMatrix<f64>, String> {
+        // Compute element length
+        let length = self.length(nodes)?;
+
+        // Get local mass matrix (12×12)
+        let m_local = self.local_mass(length, material)?;
+
+        // Get transformation matrix (12×12)
+        let t = self.transformation_matrix(nodes)?;
+
+        // Transform to global coordinates: M_global = T^T * M_local * T
+        let m_global = &t.transpose() * m_local * &t;
+
+        Ok(m_global)
     }
 }
 
@@ -454,5 +571,220 @@ mod tests {
         let t = beam.transformation_matrix(&nodes).unwrap();
         assert_eq!(t.nrows(), 12);
         assert_eq!(t.ncols(), 12);
+    }
+
+    // ========== Mass Matrix Tests ==========
+
+    fn make_material_with_density() -> Material {
+        Material {
+            name: "STEEL".to_string(),
+            model: crate::materials::MaterialModel::LinearElastic,
+            elastic_modulus: Some(200e9), // Pa
+            poissons_ratio: Some(0.3),
+            density: Some(7850.0), // kg/m³
+            thermal_expansion: None,
+            conductivity: None,
+            specific_heat: None,
+        }
+    }
+
+    #[test]
+    fn mass_matrix_requires_density() {
+        let section = BeamSection::circular(0.05);
+        let beam = Beam31::new(1, 0, 1, section);
+        let nodes = vec![
+            Node::new(0, 0.0, 0.0, 0.0),
+            Node::new(1, 1.0, 0.0, 0.0),
+        ];
+
+        let material = Material {
+            name: "NO_DENSITY".to_string(),
+            model: crate::materials::MaterialModel::LinearElastic,
+            elastic_modulus: Some(200e9),
+            poissons_ratio: Some(0.3),
+            density: None, // Missing density
+            thermal_expansion: None,
+            conductivity: None,
+            specific_heat: None,
+        };
+
+        let result = beam.mass_matrix(&nodes, &material);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("density"));
+    }
+
+    #[test]
+    fn mass_matrix_is_symmetric() {
+        let section = BeamSection::circular(0.05);
+        let beam = Beam31::new(1, 0, 1, section);
+        let nodes = vec![
+            Node::new(0, 0.0, 0.0, 0.0),
+            Node::new(1, 1.0, 0.0, 0.0),
+        ];
+        let material = make_material_with_density();
+
+        let m = beam.mass_matrix(&nodes, &material).unwrap();
+
+        // Check symmetry: M[i,j] == M[j,i]
+        for i in 0..12 {
+            for j in 0..12 {
+                let error = (m[(i, j)] - m[(j, i)]).abs();
+                assert!(
+                    error < 1e-10,
+                    "Mass matrix not symmetric at ({}, {}): {} vs {}",
+                    i,
+                    j,
+                    m[(i, j)],
+                    m[(j, i)]
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn mass_matrix_has_positive_diagonals() {
+        let section = BeamSection::circular(0.05);
+        let beam = Beam31::new(1, 0, 1, section);
+        let nodes = vec![
+            Node::new(0, 0.0, 0.0, 0.0),
+            Node::new(1, 1.0, 0.0, 0.0),
+        ];
+        let material = make_material_with_density();
+
+        let m = beam.mass_matrix(&nodes, &material).unwrap();
+
+        // Check all diagonal entries are positive
+        for i in 0..12 {
+            assert!(
+                m[(i, i)] > 0.0,
+                "Diagonal entry M[{}, {}] = {} should be positive",
+                i,
+                i,
+                m[(i, i)]
+            );
+        }
+    }
+
+    #[test]
+    fn mass_matrix_conserves_total_mass() {
+        // Test: Total translational mass should be consistent with ρ*A*L
+        let radius = 0.05; // m
+        let length = 2.0; // m
+        let section = BeamSection::circular(radius);
+        let beam = Beam31::new(1, 0, 1, section);
+        let nodes = vec![
+            Node::new(0, 0.0, 0.0, 0.0),
+            Node::new(1, length, 0.0, 0.0),
+        ];
+        let material = make_material_with_density();
+
+        let m = beam.mass_matrix(&nodes, &material).unwrap();
+
+        // For a beam along x-axis, extract axial mass (DOFs 0, 6)
+        // The sum of entries in the axial DOF rows should equal total axial mass
+        let axial_mass_matrix_sum: f64 = m[(0, 0)] + m[(0, 6)] + m[(6, 0)] + m[(6, 6)];
+
+        // Expected: (ρ*A*L/6) * (2 + 1 + 1 + 2) = ρ*A*L
+        let expected_axial_mass = material.density.unwrap() * beam.section.area * length;
+
+        let error = (axial_mass_matrix_sum - expected_axial_mass).abs();
+        let relative_error = error / expected_axial_mass;
+
+        assert!(
+            relative_error < 1e-10,
+            "Axial mass conservation error: {:.2e}% (expected 0%)",
+            relative_error * 100.0
+        );
+    }
+
+    #[test]
+    fn mass_matrix_axial_component() {
+        // Test specific values for axial mass
+        // Element: 1m long, area=1m², density=1000 kg/m³
+        let section = BeamSection::custom(1.0, 0.0001, 0.0001, 0.0001);
+        let beam = Beam31::new(1, 0, 1, section);
+        let nodes = vec![
+            Node::new(0, 0.0, 0.0, 0.0),
+            Node::new(1, 1.0, 0.0, 0.0),
+        ];
+
+        let mut material = make_material_with_density();
+        material.density = Some(1000.0); // kg/m³
+
+        let m = beam.mass_matrix(&nodes, &material).unwrap();
+
+        // Axial mass coefficient: ρ*A*L/6 = 1000*1*1/6 = 166.67
+        let m_axial = 1000.0 * 1.0 * 1.0 / 6.0;
+
+        // For horizontal beam, axial DOFs are 0 and 6
+        assert!(
+            (m[(0, 0)] - 2.0 * m_axial).abs() < 1e-6,
+            "M[0,0] = {} should be ~{}",
+            m[(0, 0)],
+            2.0 * m_axial
+        );
+        assert!(
+            (m[(0, 6)] - m_axial).abs() < 1e-6,
+            "M[0,6] = {} should be ~{}",
+            m[(0, 6)],
+            m_axial
+        );
+        assert!(
+            (m[(6, 6)] - 2.0 * m_axial).abs() < 1e-6,
+            "M[6,6] = {} should be ~{}",
+            m[(6, 6)],
+            2.0 * m_axial
+        );
+    }
+
+    #[test]
+    fn mass_matrix_dimensions() {
+        let section = BeamSection::circular(0.05);
+        let beam = Beam31::new(1, 0, 1, section);
+        let nodes = vec![
+            Node::new(0, 0.0, 0.0, 0.0),
+            Node::new(1, 1.0, 0.0, 0.0),
+        ];
+        let material = make_material_with_density();
+
+        let m = beam.mass_matrix(&nodes, &material).unwrap();
+
+        assert_eq!(m.nrows(), 12, "Mass matrix should be 12×12");
+        assert_eq!(m.ncols(), 12, "Mass matrix should be 12×12");
+    }
+
+    #[test]
+    fn mass_matrix_bending_components_nonzero() {
+        // Test that bending DOFs have non-zero mass
+        let section = BeamSection::circular(0.05);
+        let beam = Beam31::new(1, 0, 1, section);
+        let nodes = vec![
+            Node::new(0, 0.0, 0.0, 0.0),
+            Node::new(1, 1.0, 0.0, 0.0),
+        ];
+        let material = make_material_with_density();
+
+        let m = beam.mass_matrix(&nodes, &material).unwrap();
+
+        // For a beam along x-axis:
+        // - Transverse DOFs (1, 2, 7, 8) should have mass
+        // - Rotational DOFs (3, 4, 5, 9, 10, 11) should have mass
+
+        // Check transverse y (DOF 1, 7)
+        assert!(m[(1, 1)] > 0.0, "Transverse y mass should be positive");
+        assert!(m[(7, 7)] > 0.0, "Transverse y mass should be positive");
+
+        // Check transverse z (DOF 2, 8)
+        assert!(m[(2, 2)] > 0.0, "Transverse z mass should be positive");
+        assert!(m[(8, 8)] > 0.0, "Transverse z mass should be positive");
+
+        // Check rotational DOFs
+        for dof in [3, 4, 5, 9, 10, 11] {
+            assert!(
+                m[(dof, dof)] > 0.0,
+                "Rotational DOF {} should have positive mass",
+                dof
+            );
+        }
     }
 }

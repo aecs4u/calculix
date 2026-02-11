@@ -1,0 +1,146 @@
+digraph ccx_solver_architecture {
+    rankdir=TB;
+    fontname="Helvetica";
+    fontsize=14;
+    node [fontname="Helvetica", fontsize=10, shape=box, style="filled,rounded"];
+    edge [fontname="Helvetica", fontsize=9];
+    compound=true;
+    newrank=true;
+    labelloc="t";
+    label=<<B>CalculiX Rust Solver — Execution Flow &amp; Dependencies</B>>;
+
+    // ===== USER INPUT =====
+    input [label="input.inp\n(CalculiX input file)", shape=note, fillcolor="#E8F5E9", style=filled];
+
+    // ===== CRATES =====
+    subgraph cluster_cli {
+        label=<<B>ccx-cli</B>>;
+        style=filled; fillcolor="#E8F5E9"; color="#4CAF50";
+        cli_main [label="main.rs\nCLI entry point", fillcolor="#C8E6C9"];
+    }
+
+    subgraph cluster_inp {
+        label=<<B>ccx-inp</B>>;
+        style=filled; fillcolor="#E3F2FD"; color="#1E88E5";
+        parser [label="Deck::parse_file\nINP/Abaqus parser", fillcolor="#BBDEFB"];
+    }
+
+    subgraph cluster_model {
+        label=<<B>ccx-model</B>>;
+        style=filled; fillcolor="#E3F2FD"; color="#1E88E5";
+        model [label="ModelSummary\nanalysis detection", fillcolor="#BBDEFB"];
+    }
+
+    // ===== ccx-solver =====
+    subgraph cluster_solver {
+        label=<<B>ccx-solver</B>>;
+        style=filled; fillcolor="#FFFDE7"; color="#F9A825"; penwidth=2;
+
+        subgraph cluster_pipeline {
+            label="Analysis Pipeline";
+            style=filled; fillcolor="#FFF9C4"; color="#FBC02D";
+            analysis [label="analysis.rs\nAnalysisPipeline", fillcolor="#FFF176"];
+        }
+
+        subgraph cluster_builders {
+            label="Deck → Domain";
+            style=filled; fillcolor="#FFF9C4"; color="#FBC02D";
+            mesh_builder [label="mesh_builder.rs", fillcolor="#FFF176"];
+            bc_builder [label="bc_builder.rs", fillcolor="#FFF176"];
+            mat_builder [label="materials.rs\nMaterialLibrary", fillcolor="#FFF176"];
+        }
+
+        subgraph cluster_assembly {
+            label="Assembly Layer";
+            style=filled; fillcolor="#FFF9C4"; color="#FBC02D";
+            assembly [label="assembly.rs\nGlobalSystem", fillcolor="#FFE082"];
+            sparse [label="sparse_assembly.rs\nSparseGlobalSystem", fillcolor="#FFE082"];
+            modal [label="modal_solver.rs\nModalSolver", fillcolor="#FFE082"];
+        }
+
+        subgraph cluster_elements {
+            label="Element Library";
+            style=filled; fillcolor="#FFF9C4"; color="#FBC02D";
+            factory [label="factory.rs\nDynamicElement", fillcolor="#FFE082"];
+            elems [label="T3D2 | B31 | S4 | C3D8", fillcolor="#FFE082"];
+        }
+
+        // ===== BACKEND (NEW) =====
+        subgraph cluster_backend {
+            label=<<B>Backend Abstraction Layer</B>>;
+            style=filled; fillcolor="#F3E5F5"; color="#7B1FA2"; penwidth=2;
+            traits [label="traits.rs\nLinearSolver\nEigenSolver\nSolverBackend", fillcolor="#CE93D8", shape=doubleoctagon];
+            native [label="native.rs\nNativeBackend\n(LU, Cholesky+Eigen)", fillcolor="#E1BEE7"];
+            petsc [label="petsc.rs\nPetscBackend\n(KSP, SLEPc)\n[feature: petsc]", fillcolor="#E1BEE7", style="filled,rounded,dashed"];
+        }
+    }
+
+    // ===== NUMERICAL LIBRARIES =====
+    subgraph cluster_numlibs {
+        label=<<B>Numerical Libraries</B>>;
+        style=filled; fillcolor="#ECEFF1"; color="#546E7A";
+        nalgebra [label="nalgebra 0.34\nDMatrix, DVector", fillcolor="#B0BEC5"];
+        nalgebra_sparse [label="nalgebra-sparse 0.10\nCsrMatrix, CooMatrix", fillcolor="#B0BEC5"];
+        nalgebra_lapack [label="nalgebra-lapack 0.27\nSymmetricEigen, LU", fillcolor="#B0BEC5"];
+    }
+
+    subgraph cluster_petsc_eco {
+        label=<<B>PETSc Ecosystem (optional)</B>>;
+        style=filled; fillcolor="#FFEBEE"; color="#C62828";
+        petsc_c [label="PETSc C Library\n(MUMPS, SuperLU, PaStiX)\nKSP + preconditioners", fillcolor="#FFCDD2", style="filled,rounded,dashed"];
+    }
+
+    subgraph cluster_io {
+        label=<<B>ccx-io</B>>;
+        style=filled; fillcolor="#E3F2FD"; color="#1E88E5";
+        io [label="DAT / FRD / VTK\nresult output", fillcolor="#BBDEFB"];
+    }
+
+    // ===== EDGES: main flow =====
+    input -> cli_main [label="  read"];
+    cli_main -> parser [label="  parse"];
+    parser -> model [label="  detect"];
+    cli_main -> analysis [label="  run", lhead=cluster_solver];
+
+    analysis -> mesh_builder [label="Step 1"];
+    analysis -> bc_builder [label="Step 2"];
+    analysis -> mat_builder [label="Step 3"];
+
+    mesh_builder -> assembly [label="Mesh"];
+    bc_builder -> assembly [label="BCs"];
+    mat_builder -> assembly [label="Materials"];
+
+    analysis -> assembly [label="Step 4:\nassemble"];
+    analysis -> modal [label="modal\nanalysis", style=dashed];
+
+    assembly -> factory [label="element\nloop"];
+    factory -> elems;
+
+    // Backend flow
+    assembly -> traits [label="solve_with_backend()", color="#7B1FA2", penwidth=2];
+    sparse -> traits [label="solve_with_backend()", color="#7B1FA2", penwidth=2];
+    modal -> traits [label="solve_eigen()", color="#7B1FA2", penwidth=2];
+
+    traits -> native [color="#7B1FA2"];
+    traits -> petsc [color="#C62828", style=dashed];
+
+    // Lib deps
+    elems -> nalgebra [style=dotted, color="#78909C", label="element\nmatrices"];
+    native -> nalgebra [color="#546E7A"];
+    native -> nalgebra_sparse [color="#546E7A"];
+    native -> nalgebra_lapack [color="#546E7A"];
+    petsc -> petsc_c [color="#C62828", style=dashed];
+
+    // Output
+    assembly -> io [label="results", style=dashed, color="#1E88E5"];
+
+    // Legend
+    subgraph cluster_legend {
+        label="Legend"; style=filled; fillcolor="white"; color="#888888";
+        node [fontsize=8, height=0.25, width=1.2];
+        l1 [label="Existing", fillcolor="#FFE082"];
+        l2 [label="NEW backend", fillcolor="#CE93D8"];
+        l3 [label="Optional", fillcolor="#FFCDD2", style="filled,rounded,dashed"];
+        l1 -> l2 -> l3 [style=invis];
+    }
+}

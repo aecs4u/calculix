@@ -47,6 +47,39 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 
 Visit: http://localhost:8000
 
+## Docker + Cloud Run (v2 / Gen2)
+
+### Build and run locally with Docker
+
+```bash
+cd crates/validation-api
+docker build -t calculix-validation-api:local .
+docker run --rm -p 8080:8080 calculix-validation-api:local
+```
+
+Visit: http://localhost:8080
+
+### Deploy to Google Cloud Run v2
+
+```bash
+cd crates/validation-api
+
+# one-time: create Artifact Registry repository
+gcloud artifacts repositories create calculix \
+  --repository-format=docker \
+  --location=us-central1
+
+# submit build + deploy (Cloud Build config in this folder)
+gcloud builds submit \
+  --config cloudbuild.cloudrun.yaml \
+  --substitutions _REGION=us-central1,_REPOSITORY=calculix,_SERVICE=calculix-validation-api
+```
+
+Notes:
+- The container listens on `$PORT` (Cloud Run default: `8080`).
+- `DATABASE_URL` is configurable via env var. Default in container is `sqlite:////tmp/validation_results.db`.
+- `/tmp` on Cloud Run is ephemeral. For persistent production data, use Cloud SQL (PostgreSQL) and set `DATABASE_URL` accordingly.
+
 ## API Endpoints
 
 ### Web Interface

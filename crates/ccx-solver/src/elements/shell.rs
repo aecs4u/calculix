@@ -661,6 +661,163 @@ impl S4 {
 
         Ok(t)
     }
+
+    /// Convert uniform pressure load to equivalent nodal forces
+    ///
+    /// Uses numerical integration to compute equivalent nodal forces for a uniform
+    /// pressure applied normal to the shell surface.
+    ///
+    /// # Formula
+    /// F_i = ∫∫ p * N_i(ξ,η) * |J(ξ,η)| dξ dη * n̂
+    ///
+    /// where:
+    /// - p is the pressure magnitude (positive = compression)
+    /// - N_i are the shape functions
+    /// - J is the Jacobian determinant
+    /// - n̂ is the outward surface normal
+    ///
+    /// # Arguments
+    /// * `nodes` - Element node coordinates (4 nodes)
+    /// * `pressure` - Pressure magnitude in Pa (positive = compression into surface)
+    ///
+    /// # Returns
+    /// Array of 4 nodal force vectors, each with 6 DOFs [Fx, Fy, Fz, Mx, My, Mz]
+    /// Moments are zero for pure pressure load
+    ///
+    /// # Errors
+    /// Returns error if:
+    /// - Invalid node count
+    /// - Degenerate element geometry
+    pub fn pressure_to_nodal_forces(
+        &self,
+        nodes: &[Node],
+        pressure: f64,
+    ) -> Result<[nalgebra::SVector<f64, 6>; 4], String> {
+        self.validate_nodes()?;
+
+        if nodes.len() != 4 {
+            return Err(format!(
+                "Expected 4 nodes for pressure calculation, got {}",
+                nodes.len()
+            ));
+        }
+
+        // Compute surface normal (outward direction)
+        let normal = self.surface_normal(nodes)?;
+
+        // 2×2 Gauss quadrature points and weights (same as membrane/bending integration)
+        let gauss_xi = [-1.0 / f64::sqrt(3.0), 1.0 / f64::sqrt(3.0)];
+        let gauss_eta = [-1.0 / f64::sqrt(3.0), 1.0 / f64::sqrt(3.0)];
+        let weights = [1.0, 1.0, 1.0, 1.0]; // w_i * w_j = 1.0 * 1.0 for all combinations
+
+        // Initialize nodal forces (zeros)
+        type Vector6 = nalgebra::SVector<f64, 6>;
+        let mut nodal_forces = [Vector6::zeros(); 4];
+
+        // Numerical integration over element surface
+        let mut gp_idx = 0;
+        for &xi in &gauss_xi {
+            for &eta in &gauss_eta {
+                let weight = weights[gp_idx];
+
+                // Shape functions at this Gauss point
+                let n = Self::shape_functions(xi, eta);
+
+                // Jacobian determinant (surface differential element dS)
+                let (_j, _j_inv, det_j) = self.jacobian(nodes, xi, eta)?;
+
+                // Differential force at this Gauss point: dF = p * |J| * w
+                let df = pressure * det_j * weight;
+
+                // Distribute to nodes via shape functions
+                for i in 0..4 {
+                    // Force contributions (F = N_i * dF * normal)
+                    nodal_forces[i][0] += n[i] * df * normal.x; // Fx
+                    nodal_forces[i][1] += n[i] * df * normal.y; // Fy
+                    nodal_forces[i][2] += n[i] * df * normal.z; // Fz
+                    // Moments remain zero (Mx=0, My=0, Mz=0) for uniform pressure
+                }
+
+                gp_idx += 1;
+            }
+        }
+
+        Ok(nodal_forces)
+    }
+
+    /// Compute the local mass matrix (24×24) using consistent mass formulation
+    ///
+    /// # Theory
+    /// The consistent mass matrix for shell elements is derived from:
+    /// M = ∫∫ ρ * N^T * N * dA
+    ///
+    /// where:
+    /// - ρ = material density [kg/m³]
+    /// - N = shape function matrix
+    /// - dA = element of area
+    ///
+    /// For translational DOFs: M_trans_ij = ∫∫ ρ * t * Ni * Nj * |J| dξ dη
+    /// For rotational DOFs: M_rot_ij = ∫∫ (ρ * t³/12) * Ni * Nj * |J| dξ dη
+    ///
+    /// # Integration
+    /// Uses 2×2 Gauss quadrature (4 integration points)
+    ///
+    /// # DOF Ordering (per node)
+    /// - DOFs 0-2: Translations (ux, uy, uz)
+    /// - DOFs 3-5: Rotations (θx, θy, θz)
+    fn local_mass(&self, nodes: &[Node], material: &Material) -> Result<DMatrix<f64>, String> {
+        let rho = material.density
+            .ok_or("Material missing density (required for mass matrix)")?;
+        let t = self.section.thickness;
+
+        // Initialize 24×24 mass matrix
+        let mut m = DMatrix::zeros(24, 24);
+
+        // 2×2 Gauss quadrature
+        let gp = 1.0 / f64::sqrt(3.0);
+        let gauss_points = [(-gp, -gp), (gp, -gp), (gp, gp), (-gp, gp)];
+        let weights = [1.0, 1.0, 1.0, 1.0];
+
+        // Integrate over element
+        for (gp_idx, &(xi, eta)) in gauss_points.iter().enumerate() {
+            let weight = weights[gp_idx];
+
+            // Get shape functions at this Gauss point
+            let n = Self::shape_functions(xi, eta);
+
+            // Get Jacobian determinant
+            let (_j, _j_inv, det_j) = self.jacobian(nodes, xi, eta)?;
+
+            // Integration factor for translational mass
+            let mass_trans = rho * t * det_j * weight;
+
+            // Integration factor for rotational mass (using t³/12 for rotational inertia)
+            let mass_rot = rho * t * t * t / 12.0 * det_j * weight;
+
+            // Assemble mass matrix
+            for i in 0..4 {
+                for j in 0..4 {
+                    let mass_contrib = n[i] * n[j];
+
+                    // Translational DOFs (ux, uy, uz) for each node
+                    for dof in 0..3 {
+                        let row = i * 6 + dof;
+                        let col = j * 6 + dof;
+                        m[(row, col)] += mass_trans * mass_contrib;
+                    }
+
+                    // Rotational DOFs (θx, θy, θz) for each node
+                    for dof in 3..6 {
+                        let row = i * 6 + dof;
+                        let col = j * 6 + dof;
+                        m[(row, col)] += mass_rot * mass_contrib;
+                    }
+                }
+            }
+        }
+
+        Ok(m)
+    }
 }
 
 impl Element for S4 {
@@ -689,6 +846,25 @@ impl Element for S4 {
 
     fn dofs_per_node(&self) -> usize {
         6
+    }
+
+    fn mass_matrix(
+        &self,
+        nodes: &[Node],
+        material: &Material,
+    ) -> Result<DMatrix<f64>, String> {
+        self.validate_nodes()?;
+
+        // Get local mass matrix (24×24)
+        let m_local = self.local_mass(nodes, material)?;
+
+        // Get transformation matrix (24×24)
+        let t = self.transformation_matrix(nodes)?;
+
+        // Transform to global coordinates: M_global = T^T * M_local * T
+        let m_global = &t.transpose() * m_local * &t;
+
+        Ok(m_global)
     }
 }
 
@@ -1431,6 +1607,337 @@ mod tests {
             near_zero_eigenvalues <= 3,
             "Should have at most 3 near-zero eigenvalues (rigid body modes), got {}",
             near_zero_eigenvalues
+        );
+    }
+
+    #[test]
+    fn pressure_force_conservation() {
+        // Test: Total nodal force = pressure × area
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes(); // 1×1 meter plate
+        let pressure = 1000.0; // 1000 Pa
+
+        let nodal_forces = shell
+            .pressure_to_nodal_forces(&nodes, pressure)
+            .expect("Should compute nodal forces");
+
+        // Sum all nodal forces
+        let mut total_force = Vector3::<f64>::zeros();
+        for force_vec in &nodal_forces {
+            total_force.x += force_vec[0]; // Sum Fx
+            total_force.y += force_vec[1]; // Sum Fy
+            total_force.z += force_vec[2]; // Sum Fz
+        }
+
+        // Expected total force = pressure × area
+        let expected_total: f64 = pressure * 1.0; // 1.0 m²
+
+        // Force should be in z-direction (normal to XY plate)
+        let total_magnitude: f64 = total_force.norm();
+        let error: f64 = (total_magnitude - expected_total).abs() / expected_total * 100.0;
+
+        println!("Pressure force conservation:");
+        println!("  Total force: ({}, {}, {})", total_force.x, total_force.y, total_force.z);
+        println!("  Expected: {} N", expected_total);
+        println!("  Actual: {} N", total_magnitude);
+        println!("  Error: {:.4}%", error);
+
+        assert!(
+            error < 0.1,
+            "Force conservation error should be < 0.1%, got {:.4}%",
+            error
+        );
+    }
+
+    #[test]
+    fn pressure_force_direction() {
+        // Test: Forces should be perpendicular to surface
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes(); // Plate in XY plane
+        let pressure = 1000.0;
+
+        let nodal_forces = shell
+            .pressure_to_nodal_forces(&nodes, pressure)
+            .expect("Should compute nodal forces");
+
+        // For flat plate in XY plane, force should be in +Z direction
+        let surface_normal = shell.surface_normal(&nodes).expect("Should get normal");
+
+        // Check that force is parallel to normal
+        for (i, force_vec) in nodal_forces.iter().enumerate() {
+            let force = Vector3::<f64>::new(force_vec[0], force_vec[1], force_vec[2]);
+            let force_magnitude = force.norm();
+
+            if force_magnitude > 1e-10 {
+                // Normalize and check direction
+                let force_dir = force / force_magnitude;
+                let dot_product = force_dir.dot(&surface_normal);
+
+                println!(
+                    "Node {}: force direction = ({:.6}, {:.6}, {:.6}), dot with normal = {:.6}",
+                    i + 1,
+                    force_dir.x,
+                    force_dir.y,
+                    force_dir.z,
+                    dot_product
+                );
+
+                assert!(
+                    dot_product > 0.999,
+                    "Force at node {} should be parallel to surface normal, got dot = {}",
+                    i + 1,
+                    dot_product
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn pressure_uniform_distribution() {
+        // Test: Flat plate → equal forces at all nodes
+        let section = ShellSection::new(0.01);
+        let shell = S4::new(1, vec![1, 2, 3, 4], section);
+        let nodes = make_square_plate_nodes(); // Symmetric 1×1 plate
+        let pressure = 1000.0;
+
+        let nodal_forces = shell
+            .pressure_to_nodal_forces(&nodes, pressure)
+            .expect("Should compute nodal forces");
+
+        // For uniform pressure on flat symmetric plate, all nodal forces should be equal
+        let f0_magnitude = Vector3::<f64>::new(nodal_forces[0][0], nodal_forces[0][1], nodal_forces[0][2]).norm();
+
+        for (i, force_vec) in nodal_forces.iter().enumerate().skip(1) {
+            let fi_magnitude = Vector3::<f64>::new(force_vec[0], force_vec[1], force_vec[2]).norm();
+            let diff = (fi_magnitude - f0_magnitude).abs() / f0_magnitude * 100.0;
+
+            println!(
+                "Node {}: force magnitude = {:.6}, diff from node 1 = {:.4}%",
+                i + 1,
+                fi_magnitude,
+                diff
+            );
+
+            assert!(
+                diff < 0.01,
+                "Node {} force should equal node 1 force (diff = {:.4}%)",
+                i + 1,
+                diff
+            );
+        }
+
+        // All moments should be zero for uniform pressure
+        for (i, force_vec) in nodal_forces.iter().enumerate() {
+            for j in 3..6 {
+                assert!(
+                    force_vec[j].abs() < 1e-10,
+                    "Node {} moment DOF {} should be zero, got {}",
+                    i + 1,
+                    j,
+                    force_vec[j]
+                );
+            }
+        }
+    }
+
+    // ========== Mass Matrix Tests ==========
+
+    #[test]
+    fn mass_matrix_requires_density() {
+        let shell = S4::new(
+            1,
+            vec![1, 2, 3, 4],
+            ShellSection::new(0.01),
+        );
+        let nodes = make_square_plate_nodes();
+
+        let mut material = make_steel_material();
+        material.density = None; // Missing density
+
+        let result = shell.mass_matrix(&nodes, &material);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("density"));
+    }
+
+    #[test]
+    fn mass_matrix_is_symmetric() {
+        let shell = S4::new(
+            1,
+            vec![1, 2, 3, 4],
+            ShellSection::new(0.01),
+        );
+        let nodes = make_square_plate_nodes();
+        let mut material = make_steel_material();
+        material.density = Some(7850.0); // kg/m³
+
+        let m = shell.mass_matrix(&nodes, &material).unwrap();
+
+        // Check symmetry: M[i,j] == M[j,i]
+        for i in 0..24 {
+            for j in 0..24 {
+                let error = (m[(i, j)] - m[(j, i)]).abs();
+                assert!(
+                    error < 1e-10,
+                    "Mass matrix not symmetric at ({}, {}): {} vs {}",
+                    i,
+                    j,
+                    m[(i, j)],
+                    m[(j, i)]
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn mass_matrix_has_positive_diagonals() {
+        let shell = S4::new(
+            1,
+            vec![1, 2, 3, 4],
+            ShellSection::new(0.01),
+        );
+        let nodes = make_square_plate_nodes();
+        let mut material = make_steel_material();
+        material.density = Some(7850.0); // kg/m³
+
+        let m = shell.mass_matrix(&nodes, &material).unwrap();
+
+        // Check all diagonal entries are positive
+        for i in 0..24 {
+            assert!(
+                m[(i, i)] > 0.0,
+                "Diagonal entry M[{}, {}] = {} should be positive",
+                i,
+                i,
+                m[(i, i)]
+            );
+        }
+    }
+
+    #[test]
+    fn mass_matrix_dimensions() {
+        let shell = S4::new(
+            1,
+            vec![1, 2, 3, 4],
+            ShellSection::new(0.01),
+        );
+        let nodes = make_square_plate_nodes();
+        let mut material = make_steel_material();
+        material.density = Some(7850.0); // kg/m³
+
+        let m = shell.mass_matrix(&nodes, &material).unwrap();
+
+        assert_eq!(m.nrows(), 24, "Mass matrix should be 24×24");
+        assert_eq!(m.ncols(), 24, "Mass matrix should be 24×24");
+    }
+
+    #[test]
+    fn mass_matrix_conserves_translational_mass() {
+        // Test: Total translational mass should equal ρ*t*A
+        let thickness = 0.01; // m
+        let shell = S4::new(
+            1,
+            vec![1, 2, 3, 4],
+            ShellSection::new(thickness),
+        );
+        let nodes = make_square_plate_nodes(); // 1m × 1m plate
+        let mut material = make_steel_material();
+        let density = 7850.0; // kg/m³
+        material.density = Some(density);
+
+        let m = shell.mass_matrix(&nodes, &material).unwrap();
+
+        // Extract translational mass for x-direction (DOFs 0, 6, 12, 18)
+        // Sum all entries in these rows
+        let mut trans_mass_sum = 0.0;
+        for i in [0, 6, 12, 18] {
+            for j in 0..24 {
+                trans_mass_sum += m[(i, j)];
+            }
+        }
+
+        // Expected total mass: ρ * t * A = 7850 * 0.01 * 1.0 = 78.5 kg
+        let expected_mass = density * thickness * 1.0;
+
+        let error = (trans_mass_sum - expected_mass).abs();
+        let relative_error = error / expected_mass;
+
+        assert!(
+            relative_error < 1e-6,
+            "Translational mass conservation error: {:.2e}% (expected 0%)",
+            relative_error * 100.0
+        );
+    }
+
+    #[test]
+    fn mass_matrix_rotational_inertia() {
+        // Test: Rotational mass should be proportional to t³/12
+        let thickness = 0.01; // m
+        let shell = S4::new(
+            1,
+            vec![1, 2, 3, 4],
+            ShellSection::new(thickness),
+        );
+        let nodes = make_square_plate_nodes();
+        let mut material = make_steel_material();
+        material.density = Some(7850.0); // kg/m³
+
+        let m = shell.mass_matrix(&nodes, &material).unwrap();
+
+        // Rotational DOFs (3, 4, 5, 9, 10, 11, 15, 16, 17, 21, 22, 23)
+        // should have mass proportional to t³/12 vs translational mass with t
+
+        // Get a diagonal translational mass (node 1, x-direction)
+        let trans_mass = m[(0, 0)];
+
+        // Get a diagonal rotational mass (node 1, θx)
+        let rot_mass = m[(3, 3)];
+
+        // Ratio should be approximately (t³/12) / t = t²/12
+        let expected_ratio = thickness * thickness / 12.0;
+        let actual_ratio = rot_mass / trans_mass;
+        let relative_error = (actual_ratio - expected_ratio).abs() / expected_ratio;
+
+        assert!(
+            relative_error < 0.1,
+            "Rotational/translational mass ratio error: {:.2e}%",
+            relative_error * 100.0
+        );
+    }
+
+    #[test]
+    fn mass_matrix_symmetry_for_square_plate() {
+        // Test: For a square plate, all nodes should have equal diagonal mass
+        let shell = S4::new(
+            1,
+            vec![1, 2, 3, 4],
+            ShellSection::new(0.01),
+        );
+        let nodes = make_square_plate_nodes();
+        let mut material = make_steel_material();
+        material.density = Some(7850.0); // kg/m³
+
+        let m = shell.mass_matrix(&nodes, &material).unwrap();
+
+        // Check that all nodes have equal translational mass (x-direction)
+        let m00 = m[(0, 0)];   // Node 1 x-translation
+        let m66 = m[(6, 6)];   // Node 2 x-translation
+        let m1212 = m[(12, 12)]; // Node 3 x-translation
+        let m1818 = m[(18, 18)]; // Node 4 x-translation
+
+        let tolerance = 1e-6;
+        assert!(
+            (m00 - m66).abs() < tolerance,
+            "Nodes 1 and 2 should have equal mass"
+        );
+        assert!(
+            (m00 - m1212).abs() < tolerance,
+            "Nodes 1 and 3 should have equal mass"
+        );
+        assert!(
+            (m00 - m1818).abs() < tolerance,
+            "Nodes 1 and 4 should have equal mass"
         );
     }
 }

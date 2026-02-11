@@ -7,11 +7,13 @@ use nalgebra::DMatrix;
 pub mod beam;
 pub mod factory;
 pub mod shell;
+pub mod solid;
 pub mod truss;
 
 pub use beam::{Beam31, BeamSection};
 pub use factory::DynamicElement;
 pub use shell::{S4, ShellSection};
+pub use solid::C3D8;
 pub use truss::Truss2D;
 
 /// Element interface for finite element calculations
@@ -25,6 +27,20 @@ pub trait Element {
     /// # Returns
     /// Element stiffness matrix k_e (size: num_dofs × num_dofs)
     fn stiffness_matrix(&self, nodes: &[Node], material: &Material)
+    -> Result<DMatrix<f64>, String>;
+
+    /// Compute the element mass matrix in global coordinates
+    ///
+    /// # Arguments
+    /// * `nodes` - Node coordinates for this element
+    /// * `material` - Material properties (density required)
+    ///
+    /// # Returns
+    /// Element mass matrix m_e (size: num_dofs × num_dofs)
+    ///
+    /// # Errors
+    /// Returns error if material density is not provided
+    fn mass_matrix(&self, nodes: &[Node], material: &Material)
     -> Result<DMatrix<f64>, String>;
 
     /// Get the number of nodes for this element type
@@ -105,6 +121,13 @@ mod tests {
             ) -> Result<DMatrix<f64>, String> {
                 Ok(DMatrix::zeros(6, 6))
             }
+            fn mass_matrix(
+                &self,
+                _nodes: &[Node],
+                _material: &Material,
+            ) -> Result<DMatrix<f64>, String> {
+                Ok(DMatrix::zeros(6, 6))
+            }
             fn num_nodes(&self) -> usize {
                 2
             }
@@ -127,6 +150,13 @@ mod tests {
         struct DummyElement;
         impl Element for DummyElement {
             fn stiffness_matrix(
+                &self,
+                _nodes: &[Node],
+                _material: &Material,
+            ) -> Result<DMatrix<f64>, String> {
+                Ok(DMatrix::zeros(6, 6))
+            }
+            fn mass_matrix(
                 &self,
                 _nodes: &[Node],
                 _material: &Material,
