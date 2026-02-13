@@ -9,11 +9,13 @@ pub mod analysis;
 pub mod assembly;
 pub mod backend;
 pub mod bc_builder;
+pub mod bc_transfer;
 pub mod boundary_conditions;
 pub mod dat_writer;
 pub mod distributed_loads;
 pub mod dynamic_solver;
 pub mod elements;
+pub mod frequency;
 pub mod materials;
 pub mod mesh;
 pub mod mesh_builder;
@@ -31,11 +33,16 @@ pub use backend::{
     NativeBackend, PetscBackend, SolveInfo, SolverBackend, SparseTripletsF64,
 };
 pub use bc_builder::BCBuilder;
+pub use bc_transfer::BCTransfer;
 pub use boundary_conditions::{BoundaryConditions, ConcentratedLoad, DisplacementBC, DofId};
-pub use dat_writer::{write_analysis_results, write_displacements_dat};
+pub use dat_writer::{
+    write_analysis_results, write_analysis_results_extended, write_displacements_dat,
+    write_stresses_dat, write_volumes_dat, IntegrationPointStress,
+};
 pub use distributed_loads::DistributedLoadConverter;
 pub use dynamic_solver::{DynamicResults, DynamicSolver, NewmarkConfig};
-pub use elements::{Beam31, BeamSection, Element as ElementTrait, SectionProperties, Truss2D};
+pub use elements::{Beam31, Beam32, BeamSection, C3D10, C3D20, S8, Element as ElementTrait, SectionProperties, Truss2D};
+pub use frequency::{FrequencyConfig, FrequencyResult, WhichEigenvalues, frequency_analysis};
 pub use materials::{Material, MaterialLibrary, MaterialModel, MaterialStatistics};
 pub use mesh::{Element, ElementType, Mesh, MeshStatistics, Node};
 pub use mesh_builder::MeshBuilder;

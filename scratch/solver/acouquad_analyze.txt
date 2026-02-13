@@ -1,0 +1,19 @@
+=== ANALYZE: acouquad.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 24
+total_data_lines: 695
+node_rows: 425
+element_rows: 128
+material_defs: 2
+has_step: true
+has_static: true
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 17
+
+
+=== STDERR ===

@@ -1,0 +1,19 @@
+=== ANALYZE: artery5.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 25
+total_data_lines: 37
+node_rows: 14
+element_rows: 4
+material_defs: 2
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: true
+unique_keywords: 18
+
+
+=== STDERR ===

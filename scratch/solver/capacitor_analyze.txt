@@ -1,0 +1,19 @@
+=== ANALYZE: capacitor.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 13
+total_data_lines: 160
+node_rows: 108
+element_rows: 20
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: true
+unique_keywords: 12
+
+
+=== STDERR ===

@@ -1,0 +1,19 @@
+=== ANALYZE: segmentsmooth.rfn.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 1
+total_data_lines: 2756
+node_rows: 2756
+element_rows: 0
+material_defs: 0
+has_step: false
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 1
+
+
+=== STDERR ===

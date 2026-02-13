@@ -1,0 +1,19 @@
+=== ANALYZE: oneel20df2.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 16
+total_data_lines: 31
+node_rows: 20
+element_rows: 2
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: true
+unique_keywords: 16
+
+
+=== STDERR ===

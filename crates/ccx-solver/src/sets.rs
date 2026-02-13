@@ -1,6 +1,6 @@
 //! Node sets and element sets for grouping entities.
 
-use ccx_inp::{Card, Deck};
+use ccx_io::inp::{Card, Deck};
 use std::collections::HashMap;
 
 /// A named set of nodes
@@ -67,6 +67,11 @@ impl Sets {
 
         for card in &deck.cards {
             match card.keyword.to_uppercase().as_str() {
+                "NODE" => {
+                    if let Some((name, nodes)) = Self::parse_node_nset(card)? {
+                        sets.append_nodes_to_set(name, nodes);
+                    }
+                }
                 "NSET" => {
                     if let Some(nset) = Self::parse_nset(card)? {
                         sets.add_node_set(nset);
@@ -82,6 +87,17 @@ impl Sets {
         }
 
         Ok(sets)
+    }
+
+    fn append_nodes_to_set(&mut self, name: String, nodes: Vec<i32>) {
+        use std::collections::hash_map::Entry;
+
+        match self.node_sets.entry(name.clone()) {
+            Entry::Occupied(mut entry) => entry.get_mut().nodes.extend(nodes),
+            Entry::Vacant(entry) => {
+                entry.insert(NodeSet { name, nodes });
+            }
+        }
     }
 
     /// Parse a *NSET card
@@ -119,6 +135,44 @@ impl Sets {
         }
 
         Ok(Some(NodeSet { name, nodes }))
+    }
+
+    /// Parse node IDs from a *NODE card with an NSET parameter
+    fn parse_node_nset(card: &Card) -> Result<Option<(String, Vec<i32>)>, String> {
+        let nset_param = card
+            .parameters
+            .iter()
+            .find(|p| p.key.to_uppercase() == "NSET");
+
+        let name = match nset_param {
+            Some(p) => match &p.value {
+                Some(v) => v.clone(),
+                None => return Err("NSET parameter missing value".to_string()),
+            },
+            None => return Ok(None),
+        };
+
+        let mut nodes = Vec::new();
+        for data_line in &card.data_lines {
+            let Some(id_str) = data_line.split(',').next() else {
+                continue;
+            };
+            let id_trimmed = id_str.trim();
+            if id_trimmed.is_empty() {
+                return Err(format!("Invalid node ID in NODE NSET {}: {}", name, data_line));
+            }
+            match id_trimmed.parse::<i32>() {
+                Ok(node_id) => nodes.push(node_id),
+                Err(_) => {
+                    return Err(format!(
+                        "Invalid node ID in NODE NSET {}: {}",
+                        name, id_trimmed
+                    ));
+                }
+            }
+        }
+
+        Ok(Some((name, nodes)))
     }
 
     /// Parse an *ELSET card
@@ -258,5 +312,37 @@ mod tests {
         // Element sets defined in ELEMENT cards are handled by mesh_builder
         // This test just ensures we don't error on them
         assert!(sets.element_sets.is_empty());
+    }
+
+    #[test]
+    fn parses_node_set_from_node_card_parameter() {
+        let input = r#"
+*NODE, NSET=FROMNODE
+1, 0, 0, 0
+2, 1, 0, 0
+"#;
+
+        let deck = parse_deck(input);
+        let sets = Sets::build_from_deck(&deck).expect("Failed to build sets");
+
+        let nset = sets.node_sets.get("FROMNODE").unwrap();
+        assert_eq!(nset.nodes, vec![1, 2]);
+    }
+
+    #[test]
+    fn node_card_nset_appends_to_existing_set() {
+        let input = r#"
+*NSET, NSET=MYSET
+10
+*NODE, NSET=MYSET
+1, 0, 0, 0
+2, 1, 0, 0
+"#;
+
+        let deck = parse_deck(input);
+        let sets = Sets::build_from_deck(&deck).expect("Failed to build sets");
+
+        let nset = sets.node_sets.get("MYSET").unwrap();
+        assert_eq!(nset.nodes, vec![10, 1, 2]);
     }
 }

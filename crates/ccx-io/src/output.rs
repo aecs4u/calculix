@@ -2,8 +2,6 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use ccx_model::ModelSummary;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum JobStatus {
     Success,
@@ -32,15 +30,14 @@ pub struct JobReport {
 }
 
 impl JobReport {
-    pub fn from_summary(
+    pub fn new(
         job_name: impl Into<String>,
         analysis_type: impl Into<String>,
-        summary: &ModelSummary,
+        num_nodes: usize,
+        num_elements: usize,
         status: JobStatus,
         message: impl Into<String>,
     ) -> Self {
-        let num_nodes = summary.node_rows;
-        let num_elements = summary.element_rows;
         let num_dofs = num_nodes * 3;
         Self {
             job_name: job_name.into(),

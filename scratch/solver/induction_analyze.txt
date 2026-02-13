@@ -1,0 +1,19 @@
+=== ANALYZE: induction.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 20
+total_data_lines: 4837
+node_rows: 3013
+element_rows: 1124
+material_defs: 2
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 16
+
+
+=== STDERR ===

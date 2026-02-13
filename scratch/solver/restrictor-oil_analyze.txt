@@ -1,0 +1,19 @@
+=== ANALYZE: restrictor-oil.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 36
+total_data_lines: 108
+node_rows: 23
+element_rows: 12
+material_defs: 2
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: true
+unique_keywords: 14
+
+
+=== STDERR ===

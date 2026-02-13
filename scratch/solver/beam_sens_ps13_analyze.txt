@@ -1,0 +1,19 @@
+=== ANALYZE: beam_sens_ps13.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 27
+total_data_lines: 311
+node_rows: 126
+element_rows: 80
+material_defs: 1
+has_step: true
+has_static: true
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 22
+
+
+=== STDERR ===

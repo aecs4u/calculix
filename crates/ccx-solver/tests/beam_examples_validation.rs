@@ -3,7 +3,7 @@
 /// Tests parsing and basic validation of beam example INP files
 /// from the examples directory.
 
-use ccx_inp::Deck;
+use ccx_io::inp::Deck;
 use std::collections::HashMap;
 use std::path::PathBuf;
 

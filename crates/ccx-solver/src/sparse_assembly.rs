@@ -109,7 +109,11 @@ impl SparseGlobalSystem {
         // Temporary map to accumulate entries (handles duplicates)
         let mut entry_map: HashMap<(usize, usize), f64> = HashMap::new();
 
+        eprintln!("  Assembling stiffness matrix for {} elements...", mesh.elements.len());
+
         for (elem_id, element) in &mesh.elements {
+            eprintln!("  Processing element {} (type {:?}, {} nodes)", elem_id, element.element_type, element.nodes.len());
+
             // Get element nodes
             let nodes: Vec<_> = element
                 .nodes
@@ -146,11 +150,16 @@ impl SparseGlobalSystem {
                 }
             };
 
+            eprintln!("    Computing stiffness matrix...");
             // Compute element stiffness matrix
             let k_e = dyn_elem.stiffness_matrix(&nodes, material)?;
+            eprintln!("    Stiffness matrix computed, adding to global system...");
 
             // Get global DOF indices with correct stride
+            eprintln!("    Element connectivity (all {} nodes): {:?}", element.nodes.len(), element.nodes);
+            eprintln!("    Max DOFs/node: {}, Total DOFs: {}", max_dofs_per_node, num_dofs);
             let dof_indices = dyn_elem.global_dof_indices(&element.nodes, max_dofs_per_node);
+            eprintln!("    Total element DOFs: {}", dof_indices.len());
 
             // Add element contribution to entry map
             for (i_local, &i_global) in dof_indices.iter().enumerate() {

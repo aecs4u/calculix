@@ -1,0 +1,19 @@
+=== ANALYZE: wire.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 20
+total_data_lines: 233
+node_rows: 107
+element_rows: 30
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: true
+unique_keywords: 18
+
+
+=== STDERR ===

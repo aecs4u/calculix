@@ -1,0 +1,19 @@
+=== ANALYZE: coupling13.inp ===
+Duration: 0.003s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 23
+total_data_lines: 1266
+node_rows: 662
+element_rows: 192
+material_defs: 1
+has_step: true
+has_static: true
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 19
+
+
+=== STDERR ===

@@ -1,0 +1,19 @@
+=== ANALYZE: crackIIcumhcf2.inp ===
+Duration: 0.004s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 18
+total_data_lines: 14488
+node_rows: 10072
+element_rows: 4176
+material_defs: 2
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 16
+
+
+=== STDERR ===

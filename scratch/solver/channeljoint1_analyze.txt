@@ -1,0 +1,19 @@
+=== ANALYZE: channeljoint1.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 27
+total_data_lines: 56
+node_rows: 22
+element_rows: 12
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: true
+unique_keywords: 14
+
+
+=== STDERR ===

@@ -1,6 +1,6 @@
 //! Integration tests using real CalculiX input fixtures.
 
-use ccx_inp::Deck;
+use ccx_io::inp::Deck;
 use ccx_solver::{AnalysisPipeline, AnalysisType};
 use std::path::PathBuf;
 

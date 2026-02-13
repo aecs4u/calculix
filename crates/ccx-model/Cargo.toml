@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-ccx-inp = { path = "../ccx-inp" }
+ccx-io = { path = "../ccx-io" }
 
 [lib]
 name = "ccx_model"

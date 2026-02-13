@@ -1,0 +1,20 @@
+=== ANALYZE: opt3.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 30
+total_data_lines: 579
+node_rows: 261
+element_rows: 64
+material_defs: 1
+has_step: true
+has_static: true
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+include_files: opt3.inc
+unique_keywords: 23
+
+
+=== STDERR ===

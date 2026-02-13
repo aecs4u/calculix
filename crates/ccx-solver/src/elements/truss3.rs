@@ -274,7 +274,9 @@ mod tests {
             ..Default::default()
         };
 
-        let k = element.stiffness_matrix(&nodes, &material).unwrap();
+        // Convert &[&Node; 3] to [Node; 3] for the API
+        let node_array = [nodes[0].clone(), nodes[1].clone(), nodes[2].clone()];
+        let k = element.stiffness_matrix(&node_array, &material).unwrap();
         assert_eq!(k.nrows(), 9);
         assert_eq!(k.ncols(), 9);
 
@@ -291,8 +293,8 @@ mod tests {
     #[test]
     fn test_element_creation() {
         let element = Truss3D::new(1, [1, 2, 3], 0.01);
-        assert_eq!(element.id(), 1);
-        assert_eq!(element.node_ids(), vec![1, 2, 3]);
+        assert_eq!(element.id, 1);
+        assert_eq!(element.nodes.to_vec(), vec![1, 2, 3]);
         assert_eq!(element.num_nodes(), 3);
         assert_eq!(element.dofs_per_node(), 3);
         assert_eq!(element.area, 0.01);

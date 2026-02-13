@@ -1,9 +1,8 @@
 [workspace]
 members = [
-  "crates/calculix_gui",
+  "crates/ccx-gui",
   "crates/ccx-solver",
   "crates/ccx-cli",
-  "crates/ccx-inp",
   "crates/ccx-model",
   "crates/ccx-io",
   "crates/ccx-compat",

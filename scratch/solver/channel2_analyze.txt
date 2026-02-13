@@ -1,0 +1,19 @@
+=== ANALYZE: channel2.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 29
+total_data_lines: 43
+node_rows: 17
+element_rows: 6
+material_defs: 2
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: true
+unique_keywords: 20
+
+
+=== STDERR ===

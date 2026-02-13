@@ -18,9 +18,22 @@ use crate::elements::Element;
 use crate::materials::Material;
 use crate::mesh::Node;
 
+/// Section shape definition for stress computation
+#[derive(Debug, Clone, PartialEq)]
+pub enum SectionShape {
+    /// Rectangular section with width (y-direction) and height (z-direction)
+    Rectangular { width: f64, height: f64 },
+    /// Circular section with radius
+    Circular { radius: f64 },
+    /// Custom section (properties only, no stress computation)
+    Custom,
+}
+
 /// Beam section properties for various cross-section shapes
 #[derive(Debug, Clone, PartialEq)]
 pub struct BeamSection {
+    /// Section shape (for stress computation)
+    pub shape: SectionShape,
     /// Cross-sectional area
     pub area: f64,
     /// Second moment of area about local y-axis (Iyy)
@@ -57,6 +70,7 @@ impl BeamSection {
         let j = std::f64::consts::PI * radius.powi(4) / 2.0;
 
         Self {
+            shape: SectionShape::Circular { radius },
             area,
             iyy: i,
             izz: i,
@@ -85,6 +99,7 @@ impl BeamSection {
         let j = (a * b.powi(3)) * (1.0 / 3.0 - 0.21 * (b / a) * (1.0 - b.powi(4) / (12.0 * a.powi(4))));
 
         Self {
+            shape: SectionShape::Rectangular { width, height },
             area,
             iyy,
             izz,
@@ -97,6 +112,7 @@ impl BeamSection {
     /// Create a custom beam section with explicit properties
     pub fn custom(area: f64, iyy: f64, izz: f64, j: f64) -> Self {
         Self {
+            shape: SectionShape::Custom,
             area,
             iyy,
             izz,

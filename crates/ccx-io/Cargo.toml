@@ -7,8 +7,6 @@ description = "I/O utilities for CalculiX with Nastran format support via pyNast
 license = "GPL-3.0"
 
 [dependencies]
-ccx-model = { path = "../ccx-model" }
-ccx-inp = { path = "../ccx-inp" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "1.0"

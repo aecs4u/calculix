@@ -5,6 +5,7 @@ mod cident;
 mod compare;
 mod insertsortd;
 mod nident;
+mod residual;
 mod strcmp1;
 mod string_parsers;
 mod string_utils;
@@ -15,6 +16,10 @@ pub use cident::cident;
 pub use compare::compare;
 pub use insertsortd::insertsortd;
 pub use nident::{nident, nident2};
+pub use residual::{
+    AnalysisMethod, ResidualConfig, assemble_rhs_force_vector, calc_residual,
+    map_node_to_dof_order,
+};
 pub use strcmp1::strcmp1;
 pub use string_parsers::{stof, stoi};
 pub use string_utils::{strcmp2, strcpy1, strcpy2, stos, stos_inv, strsplt};

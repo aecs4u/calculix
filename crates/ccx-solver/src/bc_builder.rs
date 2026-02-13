@@ -2,7 +2,7 @@
 
 use crate::boundary_conditions::{BoundaryConditions, ConcentratedLoad, DisplacementBC};
 use crate::sets::Sets;
-use ccx_inp::{Card, Deck};
+use ccx_io::inp::{Card, Deck};
 
 /// Builds boundary conditions from a parsed input deck
 pub struct BCBuilder {

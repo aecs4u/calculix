@@ -1,0 +1,19 @@
+=== ANALYZE: beamnldye2.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 16
+total_data_lines: 316
+node_rows: 261
+element_rows: 32
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: true
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 15
+
+
+=== STDERR ===

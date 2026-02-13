@@ -1,0 +1,19 @@
+=== ANALYZE: beamdy6.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 25
+total_data_lines: 344
+node_rows: 261
+element_rows: 64
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: true
+has_heat_transfer: false
+unique_keywords: 18
+
+
+=== STDERR ===

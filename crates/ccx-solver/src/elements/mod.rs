@@ -6,17 +6,27 @@ use nalgebra::DMatrix;
 
 pub mod beam;
 pub mod beam3;
+pub mod beam_expansion;
+pub mod beam_stress;
 pub mod factory;
 pub mod shell;
+pub mod shell8;
 pub mod solid;
+pub mod solid10;
+pub mod solid20;
 pub mod truss;
 pub mod truss3;
 
-pub use beam::{Beam31, BeamSection};
+pub use beam::{Beam31, BeamSection, SectionShape};
 pub use beam3::Beam32;
+pub use beam_expansion::{expand_b32r, BeamExpansionConfig, ExpansionResult};
+pub use beam_stress::{BeamStressEvaluator, SectionForces, StressState};
 pub use factory::DynamicElement;
 pub use shell::{S4, ShellSection};
+pub use shell8::S8;
 pub use solid::C3D8;
+pub use solid10::C3D10;
+pub use solid20::C3D20;
 pub use truss::Truss2D;
 pub use truss3::Truss3D;
 

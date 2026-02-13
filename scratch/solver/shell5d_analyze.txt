@@ -1,0 +1,19 @@
+=== ANALYZE: shell5d.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 20
+total_data_lines: 66
+node_rows: 21
+element_rows: 4
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: true
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 16
+
+
+=== STDERR ===

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - CalculiX Validation{% endblock %}
+
+{% block content %}
+<h1>Validation Dashboard</h1>
+
+{% if validation_enabled %}
+<div class="card">
+    <h2>Overview</h2>
+    <div class="stats">
+        <div class="stat-box">
+            <div class="number">{{ total_examples }}</div>
+            <div class="label">Total Examples</div>
+        </div>
+        <div class="stat-box">
+            <div class="number">{{ total_validations }}</div>
+            <div class="label">Validation Results</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Database Status</h2>
+    <p class="status-ok">✓ Validation database is active and connected.</p>
+    <p>This page will display comprehensive validation metrics, test runs, and implementation status.</p>
+</div>
+{% else %}
+<div class="card">
+    <h2>Database Not Available</h2>
+    <p style="color: #e74c3c; margin-bottom: 1rem;">⚠ Validation database is not available.</p>
+    <p style="margin-bottom: 1rem;">To enable validation tracking, install the required dependencies:</p>
+    <pre>pip install sqlalchemy pydantic</pre>
+    <p style="margin-top: 1rem;">Then restart the webapp:</p>
+    <pre>./scripts/start_webapp.sh</pre>
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>Quick Links</h2>
+    <ul style="list-style-position: inside; line-height: 2;">
+        <li><a href="/fixtures" class="btn">Browse Fixtures</a></li>
+        <li><a href="/run" class="btn btn-success">Run CCX CLI</a></li>
+        <li><a href="/features" class="btn">Feature Comparison</a></li>
+        <li><a href="/status" class="btn">System Status</a></li>
+    </ul>
+</div>
+{% endblock %}

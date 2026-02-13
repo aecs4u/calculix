@@ -2,7 +2,7 @@
 
 use std::collections::BTreeMap;
 
-use ccx_inp::{Card, Deck};
+use ccx_io::inp::{Card, Deck};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ModelSummary {
@@ -92,7 +92,7 @@ fn normalized(keyword: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use ccx_inp::Deck;
+    use ccx_io::inp::Deck;
 
     use super::ModelSummary;
 

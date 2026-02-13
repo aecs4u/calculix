@@ -1,13 +1,19 @@
-//! Output and restart I/O support for the CalculiX Rust migration.
+//! I/O support for the CalculiX Rust migration.
 //!
 //! This crate provides:
-//! - lightweight DAT/STA/FRD output writers for migration-stage runs
-//! - JSON-based restart state persistence/loading
-//! - FRD (result file) reader for postprocessing
-//! - VTK/VTU export for ParaView visualization
-//! - Postprocessing utilities (von Mises, principal stresses/strains)
-//! - Nastran I/O support via pyNastran (optional, enable with `nastran` feature)
+//! - **INP (input deck)** parser for CalculiX/Abaqus keyword format
+//! - **DAT/STA/FRD** output writers for migration-stage runs
+//! - **JSON-based restart** state persistence/loading
+//! - **FRD (result file)** reader for postprocessing
+//! - **VTK/VTU export** for ParaView visualization
+//! - **Postprocessing utilities** (von Mises, principal stresses/strains)
+//! - **Nastran I/O** via pyNastran (optional, enable with `nastran` feature)
+//! - **Meshio integration** (Python) for 40+ mesh formats (VTK, STL, Gmsh, ANSYS, etc.)
+//!   - Available via `ccx-cli meshio-info`, `meshio-convert`, `meshio-formats`
+//!   - Python module: `crates/ccx-io/python/meshio_wrapper.py`
+//!   - Install: `pip install meshio` (requires Python 3.7+)
 
+pub mod inp;
 pub mod frd_reader;
 mod output;
 pub mod postprocess;
@@ -22,6 +28,7 @@ pub mod nastran;
 #[cfg(feature = "nastran")]
 pub mod converters;
 
+pub use inp::{Card, Deck, Parameter, ParseError as InpParseError};
 pub use frd_reader::{
     FrdElement, FrdFile, FrdHeader, ResultBlock, ResultDataset, ResultLocation,
 };

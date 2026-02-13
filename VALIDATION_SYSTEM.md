@@ -250,7 +250,7 @@ grep -l "TYPE=T3D2" tests/fixtures/solver/*.inp
 - [ ] Stress/strain validation
 - [ ] Modal analysis validation
 - [ ] Nonlinear analysis validation
-- [ ] Integration with validation-api dashboard
+- [ ] Integration with webapp validation dashboard
 
 ## Integration with Validation API
 
@@ -258,7 +258,7 @@ Results can be imported into the validation database:
 
 ```bash
 # Import validation results
-cd crates/validation-api
+cd webapp
 python scripts/import_validation_results.py \
     --results-dir /path/to/validation_results \
     --database app.db

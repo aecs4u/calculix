@@ -1,0 +1,30 @@
+=== SOLVE: beamcr4.inp ===
+Duration: 0.002s
+Exit Code: 2
+
+=== STDOUT ===
+
+
+=== STDERR ===
+usage:
+  ccx-cli analyze <input.inp>
+  ccx-cli analyze-fixtures <fixtures_dir>
+  ccx-cli postprocess <input.dat>
+  ccx-cli validate [--fixtures-dir <dir>]
+  ccx-cli frd2vtk <input.frd> <output.vtk>
+  ccx-cli frd2vtu [--binary] <input.frd> <output.vtu>
+  ccx-cli migration-report
+  ccx-cli gui-migration-report
+  ccx-cli --help
+  ccx-cli --version
+
+examples:
+  ccx-cli analyze tests/fixtures/solver/ax6.inp
+  ccx-cli analyze-fixtures tests/fixtures/solver
+  ccx-cli postprocess results.dat
+  ccx-cli validate
+  ccx-cli validate --fixtures-dir tests/fixtures/solver
+  ccx-cli frd2vtk job.frd job.vtk
+  ccx-cli frd2vtu job.frd job.vtu
+  ccx-cli frd2vtu --binary job.frd job.vtu
+  ccx-cli migration-report

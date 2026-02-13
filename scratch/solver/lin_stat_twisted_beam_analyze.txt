@@ -1,0 +1,19 @@
+=== ANALYZE: lin_stat_twisted_beam.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 18
+total_data_lines: 645
+node_rows: 245
+element_rows: 384
+material_defs: 1
+has_step: true
+has_static: true
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 18
+
+
+=== STDERR ===

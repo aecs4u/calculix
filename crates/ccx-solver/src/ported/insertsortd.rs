@@ -79,7 +79,7 @@ mod tests {
     fn handles_empty_array() {
         let mut data: Vec<f64> = vec![];
         insertsortd(&mut data);
-        assert_eq!(data, vec![]);
+        assert_eq!(data, Vec::<f64>::new());
     }
 
     #[test]

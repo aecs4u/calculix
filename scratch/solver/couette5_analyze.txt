@@ -1,0 +1,19 @@
+=== ANALYZE: couette5.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 146
+total_data_lines: 966
+node_rows: 84
+element_rows: 20
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 16
+
+
+=== STDERR ===

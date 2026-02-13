@@ -1,0 +1,19 @@
+=== ANALYZE: beamptied5.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 28
+total_data_lines: 436
+node_rows: 282
+element_rows: 60
+material_defs: 1
+has_step: true
+has_static: true
+has_dynamic: false
+has_frequency: true
+has_heat_transfer: false
+unique_keywords: 18
+
+
+=== STDERR ===

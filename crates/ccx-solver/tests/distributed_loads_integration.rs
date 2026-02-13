@@ -103,6 +103,9 @@ mod tests {
             parameters: vec![],
         });
 
+        // Keep an unconstrained copy to verify assembled load magnitudes directly.
+        let load_only_bcs = bcs.clone();
+
         // Fix all edges (simply supported approximation)
         // In a full simply supported case, we'd allow in-plane movement
         // For this test, we just prevent rigid body motion
@@ -113,12 +116,13 @@ mod tests {
         }
 
         let thickness = 0.01; // 1 cm
+        let load_system = GlobalSystem::assemble(&mesh, &materials, &load_only_bcs, thickness).unwrap();
         let system = GlobalSystem::assemble(&mesh, &materials, &bcs, thickness).unwrap();
 
         // Verify force conservation
         // Total force = pressure × area = 1000 Pa × 1 m² = 1000 N
         let total_z_force: f64 = (0..mesh.nodes.len())
-            .map(|i| system.force[i * 6 + 2]) // z-component (DOF 3)
+            .map(|i| load_system.force[i * 6 + 2]) // z-component (DOF 3)
             .sum();
 
         let expected_total = -pressure * 1.0; // Negative because compression
@@ -174,13 +178,6 @@ mod tests {
                 magnitude: pressure,
                 parameters: vec![],
             });
-        }
-
-        // Fix all boundary nodes
-        for node_id in [1, 2, 3, 4, 6, 7, 8, 9] {
-            bcs.add_displacement_bc(ccx_solver::boundary_conditions::DisplacementBC::new(
-                node_id, 1, 6, 0.0,
-            ));
         }
 
         let thickness = 0.01; // 1 cm
@@ -247,13 +244,6 @@ mod tests {
             3,
             concentrated_force,
         ));
-
-        // Fix all nodes
-        for node_id in [1, 2, 3, 4] {
-            bcs.add_displacement_bc(ccx_solver::boundary_conditions::DisplacementBC::new(
-                node_id, 1, 6, 0.0,
-            ));
-        }
 
         let thickness = 0.01;
         let system = GlobalSystem::assemble(&mesh, &materials, &bcs, thickness).unwrap();

@@ -63,8 +63,8 @@ println!("Elements: {}", bdf_data.elements.len());
 ### Phase 2: BDF → INP Converter in Validation API
 
 **Files Created/Modified**:
-- `crates/validation-api/app/nastran_converter.py` - Conversion logic
-- `crates/validation-api/app/main.py` - New API endpoints
+- `webapp/nastran_converter.py` - Conversion logic
+- `webapp/main.py` - New API endpoints
 
 **API Endpoints**:
 
@@ -199,8 +199,8 @@ println!("Eigenvalues: {:?}", op2_data.eigenvalues);
 
 ```bash
 # Start the validation API
-cd crates/validation-api
-uvicorn app.main:app --reload
+cd webapp
+uvicorn main:app --reload
 
 # Convert BDF to INP
 curl -X POST -F "file=@model.bdf" \
@@ -270,7 +270,7 @@ python -m pytest crates/ccx-io/python/
 cargo test --package ccx-io --features nastran --test integration
 
 # Test API endpoints
-cd crates/validation-api
+cd webapp
 pytest tests/test_nastran_endpoints.py
 ```
 

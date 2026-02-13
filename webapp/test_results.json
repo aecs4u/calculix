@@ -1,0 +1,117 @@
+{
+  "timestamp": "2026-02-11T19:40:21.939678",
+  "git_commit": "91c0375",
+  "lines_of_code": 18882,
+  "summary": {
+    "total_tests": 143,
+    "passing_tests": 143,
+    "failing_tests": 0,
+    "pass_rate": 100.0
+  },
+  "modules": [
+    {
+      "name": "elements",
+      "description": "Element library tests (truss, beam, solid)",
+      "tests": 21,
+      "passing": 21
+    },
+    {
+      "name": "assembly",
+      "description": "Global system assembly and solver",
+      "tests": 10,
+      "passing": 10
+    },
+    {
+      "name": "materials",
+      "description": "Material properties and parsing",
+      "tests": 13,
+      "passing": 13
+    },
+    {
+      "name": "mesh_builder",
+      "description": "Mesh construction from input",
+      "tests": 9,
+      "passing": 9
+    },
+    {
+      "name": "bc_builder",
+      "description": "Boundary condition parsing",
+      "tests": 9,
+      "passing": 9
+    },
+    {
+      "name": "boundary_conditions",
+      "description": "BC data structures",
+      "tests": 7,
+      "passing": 7
+    },
+    {
+      "name": "sets",
+      "description": "Node/element set handling",
+      "tests": 6,
+      "passing": 6
+    },
+    {
+      "name": "analysis",
+      "description": "Analysis pipeline",
+      "tests": 13,
+      "passing": 13
+    },
+    {
+      "name": "mesh",
+      "description": "Mesh data structures",
+      "tests": 9,
+      "passing": 9
+    },
+    {
+      "name": "ported",
+      "description": "Legacy C/Fortran utilities",
+      "tests": 46,
+      "passing": 46
+    }
+  ],
+  "examples": [
+    {
+      "name": "simple_truss",
+      "description": "2-node truss with axial load",
+      "element_type": "T3D2",
+      "num_nodes": 2,
+      "num_elements": 1,
+      "num_dofs": 6,
+      "validations": [
+        {
+          "metric": "node_2_x_displacement",
+          "computed": 0.004761905,
+          "analytical": 0.004761905,
+          "error": 1e-05,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "three_bar_truss",
+      "description": "Triangular truss structure",
+      "element_type": "T3D2",
+      "num_nodes": 3,
+      "num_elements": 3,
+      "num_dofs": 9,
+      "validations": [
+        {
+          "metric": "node_3_y_displacement",
+          "computed": -0.0012,
+          "analytical": null,
+          "error": null,
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "kpis": {
+    "test_coverage": 100.0,
+    "avg_test_time_ms": 0.3,
+    "supported_elements": [
+      "T3D2"
+    ],
+    "num_element_types": 1
+  }
+}

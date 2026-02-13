@@ -3,7 +3,7 @@
 /// This module provides factory functions to create appropriate element implementations
 /// based on element type, handling the conversion from mesh::Element to typed elements.
 
-use crate::elements::{Beam31, Beam32, BeamSection, C3D8, Element, S4, ShellSection, Truss2D, Truss3D};
+use crate::elements::{Beam31, Beam32, BeamSection, C3D8, C3D10, C3D20, Element, S4, S8, ShellSection, Truss2D, Truss3D};
 use crate::materials::Material;
 use crate::mesh::{ElementType, Node};
 use nalgebra::DMatrix;
@@ -18,7 +18,10 @@ pub enum DynamicElement {
     Beam(Beam31),
     Beam3(Beam32),
     Shell4(S4),
+    Shell8(S8),
     Solid8(C3D8),
+    Solid10(C3D10),
+    Solid20(C3D20),
 }
 
 impl DynamicElement {
@@ -82,6 +85,30 @@ impl DynamicElement {
                 let node_array: [i32; 8] = nodes.try_into().ok()?;
                 Some(DynamicElement::Solid8(C3D8::new(elem_id, node_array)))
             }
+            ElementType::C3D10 => {
+                if nodes.len() != 10 {
+                    return None;
+                }
+                let node_array: [i32; 10] = nodes.try_into().ok()?;
+                Some(DynamicElement::Solid10(C3D10::new(elem_id, node_array)))
+            }
+            ElementType::C3D20 => {
+                if nodes.len() != 20 {
+                    return None;
+                }
+                let node_array: [i32; 20] = nodes.try_into().ok()?;
+                // Create C3D20R with reduced integration (8 points)
+                Some(DynamicElement::Solid20(C3D20::new_reduced(elem_id, node_array)))
+            }
+            ElementType::S8 => {
+                if nodes.len() != 8 {
+                    return None;
+                }
+                // For shells, default_area is interpreted as thickness
+                let thickness = if default_area < 0.001 { 0.01 } else { default_area };
+                let node_array: [i32; 8] = nodes.try_into().ok()?;
+                Some(DynamicElement::Shell8(S8::new(elem_id, node_array, thickness)))
+            }
             _ => None, // Unsupported element type
         }
     }
@@ -98,7 +125,10 @@ impl DynamicElement {
             DynamicElement::Beam(beam) => beam.stiffness_matrix(nodes, material),
             DynamicElement::Beam3(beam3) => beam3.stiffness_matrix(nodes, material),
             DynamicElement::Shell4(shell) => shell.stiffness_matrix(nodes, material),
+            DynamicElement::Shell8(shell8) => shell8.stiffness_matrix(nodes, material),
             DynamicElement::Solid8(solid) => solid.stiffness_matrix(nodes, material),
+            DynamicElement::Solid10(solid10) => solid10.stiffness_matrix(nodes, material),
+            DynamicElement::Solid20(solid20) => <C3D20 as Element>::stiffness_matrix(solid20, nodes, material),
         }
     }
 
@@ -114,7 +144,10 @@ impl DynamicElement {
             DynamicElement::Beam(beam) => beam.mass_matrix(nodes, material),
             DynamicElement::Beam3(beam3) => beam3.mass_matrix(nodes, material),
             DynamicElement::Shell4(shell) => shell.mass_matrix(nodes, material),
+            DynamicElement::Shell8(shell8) => shell8.mass_matrix(nodes, material),
             DynamicElement::Solid8(solid) => solid.mass_matrix(nodes, material),
+            DynamicElement::Solid10(solid10) => solid10.mass_matrix(nodes, material),
+            DynamicElement::Solid20(solid20) => <C3D20 as Element>::mass_matrix(solid20, nodes, material),
         }
     }
 
@@ -133,7 +166,10 @@ impl DynamicElement {
             DynamicElement::Beam(b) => b.dofs_per_node(),
             DynamicElement::Beam3(b3) => b3.dofs_per_node(),
             DynamicElement::Shell4(s) => s.dofs_per_node(),
+            DynamicElement::Shell8(s8) => s8.dofs_per_node(),
             DynamicElement::Solid8(c) => c.dofs_per_node(),
+            DynamicElement::Solid10(c10) => c10.dofs_per_node(),
+            DynamicElement::Solid20(c20) => c20.dofs_per_node(),
         };
 
         let mut indices = Vec::new();
@@ -154,7 +190,10 @@ impl DynamicElement {
             DynamicElement::Beam(_) => ElementType::B31,
             DynamicElement::Beam3(_) => ElementType::B32,
             DynamicElement::Shell4(_) => ElementType::S4,
+            DynamicElement::Shell8(_) => ElementType::S8,
             DynamicElement::Solid8(_) => ElementType::C3D8,
+            DynamicElement::Solid10(_) => ElementType::C3D10,
+            DynamicElement::Solid20(_) => ElementType::C3D20,
         }
     }
 
@@ -166,7 +205,10 @@ impl DynamicElement {
             DynamicElement::Beam(beam) => beam.num_nodes() * beam.dofs_per_node(),
             DynamicElement::Beam3(beam3) => beam3.num_nodes() * beam3.dofs_per_node(),
             DynamicElement::Shell4(shell) => shell.num_nodes() * shell.dofs_per_node(),
+            DynamicElement::Shell8(shell8) => shell8.num_nodes() * shell8.dofs_per_node(),
             DynamicElement::Solid8(solid) => solid.num_nodes() * solid.dofs_per_node(),
+            DynamicElement::Solid10(solid10) => solid10.num_nodes() * solid10.dofs_per_node(),
+            DynamicElement::Solid20(solid20) => solid20.num_nodes() * solid20.dofs_per_node(),
         }
     }
 }
@@ -221,16 +263,51 @@ mod tests {
     }
 
     #[test]
-    fn test_unsupported_element_type() {
-        // C3D20 (20-node brick) is not yet supported
+    fn test_c3d20_element() {
+        // C3D20 (20-node hexahedral with reduced integration)
         let elem = DynamicElement::from_mesh_element(
             ElementType::C3D20,
             1,
-            vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+            vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
             0.01,
         );
 
-        assert!(elem.is_none());
+        assert!(elem.is_some());
+        let elem = elem.unwrap();
+        assert_eq!(elem.element_type(), ElementType::C3D20);
+        assert_eq!(elem.num_dofs(), 60); // 20 nodes × 3 DOFs
+    }
+
+    #[test]
+    fn test_c3d10_element() {
+        // C3D10 (10-node tetrahedral)
+        let elem = DynamicElement::from_mesh_element(
+            ElementType::C3D10,
+            1,
+            vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            0.01,
+        );
+
+        assert!(elem.is_some());
+        let elem = elem.unwrap();
+        assert_eq!(elem.element_type(), ElementType::C3D10);
+        assert_eq!(elem.num_dofs(), 30); // 10 nodes × 3 DOFs
+    }
+
+    #[test]
+    fn test_s8_element() {
+        // S8 (8-node quadratic shell)
+        let elem = DynamicElement::from_mesh_element(
+            ElementType::S8,
+            1,
+            vec![1, 2, 3, 4, 5, 6, 7, 8],
+            0.01, // thickness
+        );
+
+        assert!(elem.is_some());
+        let elem = elem.unwrap();
+        assert_eq!(elem.element_type(), ElementType::S8);
+        assert_eq!(elem.num_dofs(), 48); // 8 nodes × 6 DOFs
     }
 
     #[test]

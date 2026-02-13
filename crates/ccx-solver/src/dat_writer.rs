@@ -8,6 +8,16 @@ use std::fs::File;
 use std::io::{self, Write};
 use std::path::Path;
 
+fn format_dat_float(value: f64) -> String {
+    let s = format!("{value:.6E}");
+    if let Some((mantissa, exp_str)) = s.split_once('E')
+        && let Ok(exp) = exp_str.parse::<i32>()
+    {
+        return format!("{mantissa}E{exp:+03}");
+    }
+    s
+}
+
 /// Write displacement results to a .dat file in CalculiX format
 ///
 /// # Arguments
@@ -80,13 +90,102 @@ pub fn write_displacements_dat(
             uz = displacements[dof_start + 2];
         }
 
-        writeln!(
-            file,
-            "{:10} {:13.6E} {:13.6E} {:13.6E}",
-            node_id, ux, uy, uz
-        )?;
+        let ux_str = format_dat_float(ux);
+        let uy_str = format_dat_float(uy);
+        let uz_str = format_dat_float(uz);
+        writeln!(file, "{node_id}  {ux_str}  {uy_str}  {uz_str}")?;
     }
 
+    writeln!(file)?;
+    Ok(())
+}
+
+/// Stress data at an integration point
+#[derive(Debug, Clone, Copy)]
+pub struct IntegrationPointStress {
+    pub element_id: i32,
+    pub integration_point: usize,
+    pub sxx: f64,
+    pub syy: f64,
+    pub szz: f64,
+    pub sxy: f64,
+    pub sxz: f64,
+    pub syz: f64,
+}
+
+/// Write stress results to a .dat file in CalculiX format
+///
+/// # Arguments
+/// * `file` - Open file handle to write to
+/// * `stresses` - Vector of stress data at integration points
+/// * `step` - Step number
+/// * `increment` - Increment number
+/// * `time` - Analysis time
+/// * `set_name` - Element set name (e.g., "EALL")
+pub fn write_stresses_dat(
+    file: &mut File,
+    stresses: &[IntegrationPointStress],
+    step: usize,
+    increment: usize,
+    time: f64,
+    set_name: &str,
+) -> io::Result<()> {
+    writeln!(
+        file,
+        " stresses (elem, integ.pnt.,sxx,syy,szz,sxy,sxz,syz) for set {} and time  {:.7E}",
+        set_name, time
+    )?;
+    writeln!(file)?;
+
+    fn format_stress(value: f64) -> String {
+        format_dat_float(value)
+    }
+
+    for stress in stresses {
+        let sxx = format_stress(stress.sxx);
+        let syy = format_stress(stress.syy);
+        let szz = format_stress(stress.szz);
+        let sxy = format_stress(stress.sxy);
+        let sxz = format_stress(stress.sxz);
+        let syz = format_stress(stress.syz);
+        writeln!(
+            file,
+            "{:10} {:3} {:>13} {:>13} {:>13} {:>13} {:>13} {:>13}",
+            stress.element_id, stress.integration_point, sxx, syy, szz, sxy, sxz, syz
+        )?;
+    }
+    writeln!(file)?;
+    Ok(())
+}
+
+/// Write element volumes to a .dat file
+pub fn write_volumes_dat(
+    file: &mut File,
+    element_volumes: &[(i32, f64)],
+    time: f64,
+    set_name: &str,
+) -> io::Result<()> {
+    writeln!(
+        file,
+        " volume (element, volume) for set {} and time  {:.7E}",
+        set_name, time
+    )?;
+    writeln!(file)?;
+
+    let mut total_volume = 0.0;
+    for (elem_id, volume) in element_volumes {
+        writeln!(file, "{:10}  {:>13}", elem_id, format_dat_float(*volume))?;
+        total_volume += volume;
+    }
+    writeln!(file)?;
+
+    writeln!(
+        file,
+        " total volume for set {} and time  {:.7E}",
+        set_name, time
+    )?;
+    writeln!(file)?;
+    writeln!(file, "       {:>13}", format_dat_float(total_volume))?;
     writeln!(file)?;
     Ok(())
 }
@@ -101,6 +200,42 @@ pub fn write_analysis_results(
     displacements: &DVector<f64>,
 ) -> io::Result<()> {
     write_displacements_dat(output_path, mesh, displacements, 1, 1, 1.0)
+}
+
+/// Write complete analysis results including stresses and volumes
+pub fn write_analysis_results_extended(
+    output_path: &Path,
+    mesh: &Mesh,
+    displacements: &DVector<f64>,
+    stresses: Option<&[IntegrationPointStress]>,
+    element_volumes: Option<&[(i32, f64)]>,
+) -> io::Result<()> {
+    let mut file = File::create(output_path)?;
+
+    // Write header
+    writeln!(file)?;
+    writeln!(file, "                        S T E P       {}", 1)?;
+    writeln!(file)?;
+    writeln!(file)?;
+    writeln!(file, "                                INCREMENT     {}", 1)?;
+    writeln!(file)?;
+    writeln!(file)?;
+
+    // Write stresses if available
+    if let Some(stress_data) = stresses {
+        if !stress_data.is_empty() {
+            write_stresses_dat(&mut file, stress_data, 1, 1, 1.0, "EALL")?;
+        }
+    }
+
+    // Write volumes if available
+    if let Some(volumes) = element_volumes {
+        if !volumes.is_empty() {
+            write_volumes_dat(&mut file, volumes, 1.0, "EALL")?;
+        }
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]
@@ -122,7 +257,7 @@ mod tests {
             Element {
                 id: 1,
                 element_type: ElementType::T3D2,
-                connectivity: vec![1, 2],
+                nodes: vec![1, 2],
             },
         );
 
@@ -130,8 +265,6 @@ mod tests {
             nodes,
             elements,
             num_dofs: 6,
-            dofs_per_node: 3,
-            node_dof_map: HashMap::new(),
         };
 
         // Create displacement vector
@@ -166,8 +299,6 @@ mod tests {
             nodes,
             elements: HashMap::new(),
             num_dofs: 3,
-            dofs_per_node: 3,
-            node_dof_map: HashMap::new(),
         };
 
         let displacements = DVector::from_vec(vec![0.0, 0.0, 0.0]);

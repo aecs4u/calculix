@@ -1,0 +1,19 @@
+=== ANALYZE: multistage.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 78
+total_data_lines: 2039
+node_rows: 1156
+element_rows: 280
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: true
+has_heat_transfer: false
+unique_keywords: 25
+
+
+=== STDERR ===

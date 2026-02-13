@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}System Status - CalculiX Rust Solver{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>System Status</h2>
+
+    <h3>ccx-cli Binary</h3>
+    <table>
+        <tr>
+            <td><strong>Path:</strong></td>
+            <td><code>{{ ccx_cli_path }}</code></td>
+        </tr>
+        <tr>
+            <td><strong>Status:</strong></td>
+            <td>
+                {% if ccx_cli_exists %}
+                    <span class="status-ok">✓ Available</span>
+                {% else %}
+                    <span class="status-error">✗ Not Found</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Version:</strong></td>
+            <td><code>{{ version }}</code></td>
+        </tr>
+    </table>
+
+    {% if not ccx_cli_exists %}
+    <div style="margin-top: 1rem; padding: 1rem; background: #fff3cd; border-radius: 4px; color: #856404;">
+        <strong>Build Instructions:</strong><br>
+        <code>cargo build --release --package ccx-cli</code>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Directories</h2>
+    <table>
+        <tr>
+            <td><strong>Fixtures Directory:</strong></td>
+            <td><code>{{ fixtures_dir }}</code></td>
+        </tr>
+        <tr>
+            <td><strong>Validation Directory:</strong></td>
+            <td><code>{{ validation_dir }}</code></td>
+        </tr>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Test Data Statistics</h2>
+    <div class="stats">
+        <div class="stat-box">
+            <div class="number">{{ num_fixtures }}</div>
+            <div class="label">Test Fixtures (.inp)</div>
+        </div>
+        <div class="stat-box">
+            <div class="number">{{ num_references }}</div>
+            <div class="label">Reference Files (.dat.ref)</div>
+        </div>
+        <div class="stat-box">
+            <div class="number">{{ num_matched }}</div>
+            <div class="label">Matched Pairs</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Quick Actions</h2>
+    <p>
+        <a href="/fixtures" class="btn">Browse Fixtures</a>
+        <a href="/api/fixtures" class="btn">Fixtures API</a>
+        <a href="/health" class="btn">Health Check</a>
+    </p>
+
+    {% if ccx_cli_exists %}
+    <h3 style="margin-top: 2rem;">Check Version</h3>
+    <button class="btn" onclick="checkVersion()">Get Version Info</button>
+    <div id="version-result" style="margin-top: 1rem;"></div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>API Endpoints</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Method</th>
+                <th>Endpoint</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><span class="badge badge-success">GET</span></td>
+                <td><code>/</code></td>
+                <td>Home page</td>
+            </tr>
+            <tr>
+                <td><span class="badge badge-success">GET</span></td>
+                <td><code>/fixtures</code></td>
+                <td>List all fixtures</td>
+            </tr>
+            <tr>
+                <td><span class="badge badge-success">GET</span></td>
+                <td><code>/fixtures/{name}</code></td>
+                <td>View fixture content</td>
+            </tr>
+            <tr>
+                <td><span class="badge" style="background: #fff3cd; color: #856404;">POST</span></td>
+                <td><code>/analyze/{name}</code></td>
+                <td>Analyze fixture</td>
+            </tr>
+            <tr>
+                <td><span class="badge" style="background: #fff3cd; color: #856404;">POST</span></td>
+                <td><code>/validate</code></td>
+                <td>Run validation suite</td>
+            </tr>
+            <tr>
+                <td><span class="badge badge-success">GET</span></td>
+                <td><code>/version</code></td>
+                <td>Get ccx-cli version</td>
+            </tr>
+            <tr>
+                <td><span class="badge badge-success">GET</span></td>
+                <td><code>/health</code></td>
+                <td>Health check</td>
+            </tr>
+            <tr>
+                <td><span class="badge badge-success">GET</span></td>
+                <td><code>/status</code></td>
+                <td>System status</td>
+            </tr>
+            <tr>
+                <td><span class="badge badge-success">GET</span></td>
+                <td><code>/api/fixtures</code></td>
+                <td>Fixtures list (JSON)</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function checkVersion() {
+    const btn = event.target;
+    const resultDiv = document.getElementById('version-result');
+
+    btn.disabled = true;
+    btn.textContent = 'Checking...';
+    resultDiv.innerHTML = '<p>Loading...</p>';
+
+    try {
+        const response = await fetch('/version');
+        const data = await response.json();
+
+        if (data.success) {
+            resultDiv.innerHTML = `
+                <div style="padding: 1rem; background: #d4edda; border-radius: 4px; color: #155724;">
+                    <strong>Version:</strong> <code>${data.version}</code>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div style="padding: 1rem; background: #f8d7da; border-radius: 4px; color: #721c24;">
+                    <strong>Error:</strong> ${data.error}
+                </div>
+            `;
+        }
+    } catch (error) {
+        resultDiv.innerHTML = `
+            <div style="padding: 1rem; background: #f8d7da; border-radius: 4px; color: #721c24;">
+                <strong>Request Failed:</strong> ${error.message}
+            </div>
+        `;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Get Version Info';
+    }
+}
+</script>
+{% endblock %}

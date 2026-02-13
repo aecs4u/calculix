@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Test Fixtures - CalculiX Rust Solver{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Test Fixtures</h2>
+    <p>Total fixtures: <strong>{{ total }}</strong></p>
+
+    {% if fixtures %}
+    <table>
+        <thead>
+            <tr>
+                <th>Fixture Name</th>
+                <th>Size</th>
+                <th>Reference</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fixture in fixtures %}
+            <tr>
+                <td><code>{{ fixture.name }}</code></td>
+                <td>{{ "%.1f"|format(fixture.size / 1024) }} KB</td>
+                <td>
+                    {% if fixture.has_reference %}
+                        <span class="badge badge-success">✓ Has .dat.ref</span>
+                    {% else %}
+                        <span class="badge badge-warning">No reference</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <button class="btn" onclick="viewFixture('{{ fixture.name }}')">View</button>
+                    <button class="btn btn-success" onclick="analyzeFixture('{{ fixture.name }}')">Analyze</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #7f8c8d;">No fixtures found.</p>
+    {% endif %}
+</div>
+
+<!-- Modal for viewing fixture content -->
+<div id="fixture-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 8px; max-width: 90%; max-height: 90%; overflow: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 id="modal-title">Fixture Content</h2>
+            <button class="btn btn-danger" onclick="closeModal()">Close</button>
+        </div>
+        <div id="modal-content"></div>
+    </div>
+</div>
+
+<!-- Modal for analysis results -->
+<div id="result-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 8px; max-width: 90%; max-height: 90%; overflow: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 id="result-title">Analysis Results</h2>
+            <button class="btn btn-danger" onclick="closeResultModal()">Close</button>
+        </div>
+        <div id="result-content"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function viewFixture(fixtureName) {
+    const modal = document.getElementById('fixture-modal');
+    const title = document.getElementById('modal-title');
+    const content = document.getElementById('modal-content');
+
+    title.textContent = fixtureName;
+    content.innerHTML = '<p>Loading...</p>';
+    modal.style.display = 'block';
+
+    try {
+        const response = await fetch(`/fixtures/${fixtureName}`);
+        const data = await response.json();
+
+        content.innerHTML = `
+            <p><strong>Lines:</strong> ${data.lines} | <strong>Size:</strong> ${(data.size / 1024).toFixed(1)} KB</p>
+            <pre style="max-height: 60vh; overflow: auto;">${escapeHtml(data.content)}</pre>
+        `;
+    } catch (error) {
+        content.innerHTML = `<p style="color: #e74c3c;">Error: ${error.message}</p>`;
+    }
+}
+
+async function analyzeFixture(fixtureName) {
+    const modal = document.getElementById('result-modal');
+    const title = document.getElementById('result-title');
+    const content = document.getElementById('result-content');
+
+    title.textContent = `Analyzing ${fixtureName}`;
+    content.innerHTML = '<p>Running analysis...</p>';
+    modal.style.display = 'block';
+
+    try {
+        const response = await fetch(`/analyze/${fixtureName}`, {
+            method: 'POST'
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            content.innerHTML = `
+                <div style="padding: 1rem; background: #d4edda; border-radius: 4px; color: #155724; margin-bottom: 1rem;">
+                    <strong>✓ Analysis Complete</strong><br>
+                    Duration: ${data.duration_seconds}s
+                </div>
+                <h3>Output:</h3>
+                <pre style="max-height: 60vh; overflow: auto; background: #f4f4f4; padding: 1rem; border-radius: 4px;">${escapeHtml(data.stdout)}</pre>
+            `;
+        } else {
+            content.innerHTML = `
+                <div style="padding: 1rem; background: #f8d7da; border-radius: 4px; color: #721c24; margin-bottom: 1rem;">
+                    <strong>✗ Analysis Failed</strong><br>
+                    Return code: ${data.returncode}
+                </div>
+                <h3>Error:</h3>
+                <pre style="max-height: 60vh; overflow: auto; background: #f4f4f4; padding: 1rem; border-radius: 4px;">${escapeHtml(data.stderr)}</pre>
+            `;
+        }
+    } catch (error) {
+        content.innerHTML = `<p style="color: #e74c3c;">Error: ${error.message}</p>`;
+    }
+}
+
+function closeModal() {
+    document.getElementById('fixture-modal').style.display = 'none';
+}
+
+function closeResultModal() {
+    document.getElementById('result-modal').style.display = 'none';
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Close modals on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeModal();
+        closeResultModal();
+    }
+});
+</script>
+{% endblock %}

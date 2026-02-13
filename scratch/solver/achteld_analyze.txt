@@ -1,0 +1,19 @@
+=== ANALYZE: achteld.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 15
+total_data_lines: 110
+node_rows: 81
+element_rows: 16
+material_defs: 1
+has_step: true
+has_static: true
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 14
+
+
+=== STDERR ===

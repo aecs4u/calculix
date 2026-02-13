@@ -1,6 +1,6 @@
 /// Comprehensive validation test for all example INP files
 /// This test parses all example files to ensure compatibility
-use ccx_inp::Deck;
+use ccx_io::inp::Deck;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::fs;

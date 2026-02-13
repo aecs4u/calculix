@@ -1,0 +1,19 @@
+=== ANALYZE: multistage_radial.inp ===
+Duration: 0.003s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 37
+total_data_lines: 6202
+node_rows: 2058
+element_rows: 640
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: true
+has_heat_transfer: false
+unique_keywords: 18
+
+
+=== STDERR ===

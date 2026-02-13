@@ -1,0 +1,19 @@
+=== ANALYZE: impdyn.inp ===
+Duration: 0.003s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 40
+total_data_lines: 3544
+node_rows: 2658
+element_rows: 736
+material_defs: 1
+has_step: true
+has_static: true
+has_dynamic: true
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 17
+
+
+=== STDERR ===

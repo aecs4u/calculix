@@ -9,7 +9,7 @@
 //! 6. Solve for displacements
 //! 7. Verify results against analytical solution
 
-use ccx_inp::Deck;
+use ccx_io::inp::Deck;
 use ccx_solver::{BCBuilder, GlobalSystem, MaterialLibrary, MeshBuilder};
 
 #[test]

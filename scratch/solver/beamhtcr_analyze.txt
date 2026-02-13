@@ -1,0 +1,19 @@
+=== ANALYZE: beamhtcr.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 18
+total_data_lines: 803
+node_rows: 495
+element_rows: 96
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: true
+unique_keywords: 17
+
+
+=== STDERR ===

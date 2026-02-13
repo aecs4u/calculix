@@ -1,0 +1,19 @@
+=== ANALYZE: membrane1.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 13
+total_data_lines: 20
+node_rows: 9
+element_rows: 4
+material_defs: 1
+has_step: true
+has_static: true
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 13
+
+
+=== STDERR ===

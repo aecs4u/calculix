@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CalculiX Rust - Modern FEA Solver</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            padding: 3rem 0;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .tagline {
+            font-size: 1.3rem;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        .main-content {
+            background: white;
+            border-radius: 16px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .feature-card {
+            padding: 2rem;
+            border-radius: 12px;
+            border: 2px solid #f0f0f0;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #667eea;
+        }
+
+        .feature-desc {
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-top: 3rem;
+        }
+
+        .btn {
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: #10b981;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        .section {
+            margin: 3rem 0;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 0.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-radius: 12px;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .tech-badge {
+            padding: 0.5rem 1rem;
+            background: #f3f4f6;
+            border-radius: 6px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        code {
+            background: #f3f4f6;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🦀 CalculiX Rust</h1>
+            <p class="tagline">Modern Finite Element Analysis Solver in Rust</p>
+            <div class="status-badge">🚀 Active Development</div>
+        </header>
+
+        <div class="main-content">
+            <section class="section">
+                <h2 class="section-title">About</h2>
+                <p>
+                    <strong>CalculiX Rust</strong> is a comprehensive migration of the CalculiX finite element solver from legacy C/Fortran to modern Rust.
+                    This project provides a type-safe, memory-safe, and high-performance FEA solver with a clean modular architecture.
+                </p>
+                <p style="margin-top: 1rem;">
+                    The solver supports multiple element types (truss, beam, shell, solid), linear and nonlinear analysis,
+                    modal analysis, and dynamic time integration. Integration with PETSc provides access to industry-leading solver libraries.
+                </p>
+            </section>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">1,133</div>
+                    <div class="stat-label">Test Examples</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">99.6%</div>
+                    <div class="stat-label">Parse Success</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">8</div>
+                    <div class="stat-label">Element Types</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">206+</div>
+                    <div class="stat-label">Tests Passing</div>
+                </div>
+            </div>
+
+            <section class="section">
+                <h2 class="section-title">Features</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3 class="feature-title">High Performance</h3>
+                        <p class="feature-desc">
+                            Rust's zero-cost abstractions and LLVM optimization deliver performance comparable to C/Fortran with memory safety guarantees.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔧</div>
+                        <h3 class="feature-title">Element Library</h3>
+                        <p class="feature-desc">
+                            T3D2/T3D3 (truss), B31/B32 (beam), S4 (shell), C3D8 (hex), C3D20 (quadratic hex) with comprehensive validation.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h3 class="feature-title">Analysis Types</h3>
+                        <p class="feature-desc">
+                            Linear static, modal/frequency, nonlinear geometry, dynamic (Newmark), and contact mechanics capabilities.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔬</div>
+                        <h3 class="feature-title">PETSc Integration</h3>
+                        <p class="feature-desc">
+                            Backend abstraction layer with PETSc KSP/PC/SLEPc support for advanced iterative solvers and eigenvalue analysis.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📝</div>
+                        <h3 class="feature-title">INP Parser</h3>
+                        <p class="feature-desc">
+                            Full CalculiX/Abaqus INP format parser with support for includes, parameter expansion, and nested decks.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📈</div>
+                        <h3 class="feature-title">Validation Suite</h3>
+                        <p class="feature-desc">
+                            638+ test fixtures, pytest integration, automated validation against analytical solutions and reference outputs.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">Technology Stack</h2>
+                <div class="tech-stack">
+                    <span class="tech-badge">Rust 2024</span>
+                    <span class="tech-badge">nalgebra</span>
+                    <span class="tech-badge">nalgebra-sparse</span>
+                    <span class="tech-badge">PETSc/SLEPc</span>
+                    <span class="tech-badge">Rayon</span>
+                    <span class="tech-badge">FastAPI</span>
+                    <span class="tech-badge">pytest</span>
+                    <span class="tech-badge">SQLite</span>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">Quick Start</h2>
+                <p>Analyze a CalculiX INP file:</p>
+                <pre><code>cargo run --bin ccx-cli analyze examples/beam/cantilever.inp</code></pre>
+
+                <p style="margin-top: 1rem;">Run the solver:</p>
+                <pre><code>cargo run --bin ccx-cli solve tests/fixtures/solver/beamcr4.inp</code></pre>
+
+                <p style="margin-top: 1rem;">Run validation tests:</p>
+                <pre><code>pytest tests/solver/ -v</code></pre>
+            </section>
+
+            <div class="action-buttons">
+                <a href="/features" class="btn btn-primary">Feature Comparison</a>
+                <a href="/run" class="btn btn-primary">Run CLI</a>
+                <a href="/validation" class="btn btn-secondary">Validation Dashboard</a>
+                <a href="https://github.com/aecs4u-it/calculix" class="btn btn-secondary" target="_blank">GitHub Repository</a>
+            </div>
+        </div>
+
+        <footer>
+            <p>CalculiX Rust Migration Project • GPL-3.0 License</p>
+            <p style="margin-top: 0.5rem; opacity: 0.8;">Building the future of open-source FEA</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -25,7 +25,7 @@ echo ""
 
 # Step 2: Export test results
 echo "📊 Step 2: Exporting test results..."
-cd crates/validation-api
+cd webapp
 python3 scripts/export_test_results.py
 echo ""
 
@@ -39,14 +39,14 @@ echo ""
 echo "✅ Validation report generated successfully!"
 echo ""
 echo "📄 Files created:"
-echo "   - crates/validation-api/test_results.json    (Test data)"
-echo "   - crates/validation-api/validation_report.html (HTML report)"
+echo "   - webapp/test_results.json    (Test data)"
+echo "   - webapp/validation_report.html (HTML report)"
 echo ""
 echo "🌐 To view the report:"
-echo "   Open: crates/validation-api/validation_report.html"
+echo "   Open: webapp/validation_report.html"
 echo ""
 echo "📊 For interactive dashboard:"
-echo "   cd crates/validation-api"
+echo "   cd webapp"
 echo "   make run-api"
 echo "   Visit: http://localhost:8000"
 echo ""

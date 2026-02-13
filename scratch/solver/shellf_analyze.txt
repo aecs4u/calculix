@@ -1,0 +1,19 @@
+=== ANALYZE: shellf.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 22
+total_data_lines: 63
+node_rows: 21
+element_rows: 4
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: true
+has_heat_transfer: false
+unique_keywords: 16
+
+
+=== STDERR ===

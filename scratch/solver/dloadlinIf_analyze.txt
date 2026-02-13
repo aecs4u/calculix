@@ -1,0 +1,19 @@
+=== ANALYZE: dloadlinIf.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 13
+total_data_lines: 210
+node_rows: 188
+element_rows: 15
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: true
+has_heat_transfer: false
+unique_keywords: 12
+
+
+=== STDERR ===

@@ -1,0 +1,19 @@
+=== ANALYZE: scheibe2f2f.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 40
+total_data_lines: 5254
+node_rows: 1156
+element_rows: 512
+material_defs: 1
+has_step: true
+has_static: true
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 22
+
+
+=== STDERR ===

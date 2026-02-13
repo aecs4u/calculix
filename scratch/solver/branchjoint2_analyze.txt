@@ -1,0 +1,19 @@
+=== ANALYZE: branchjoint2.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 22
+total_data_lines: 57
+node_rows: 14
+element_rows: 8
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: true
+unique_keywords: 14
+
+
+=== STDERR ===

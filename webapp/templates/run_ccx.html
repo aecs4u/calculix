@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Run CCX CLI{% endblock %}
+
+{% block content %}
+<h1>Run CCX CLI Commands</h1>
+
+<div class="info-box">
+    <p><strong>CCX CLI:</strong> {{ ccx_cli_path }}</p>
+    <p><strong>Status:</strong> {% if ccx_cli_exists %}<span style="color: green;">✓ Available</span>{% else %}<span style="color: red;">✗ Not found</span>{% endif %}</p>
+</div>
+
+<!-- Command Executor -->
+<div style="margin: 2rem 0;">
+    <h2>Execute Command</h2>
+    <form id="runCommandForm">
+        <div style="margin-bottom: 1rem;">
+            <label for="command" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Command:</label>
+            <select id="command" name="command" style="width: 100%; padding: 0.5rem; font-size: 1rem;">
+                <option value="version">--version (Show version)</option>
+                <option value="help">--help (Show help)</option>
+                <option value="analyze">analyze &lt;file&gt; (Analyze INP file)</option>
+                <option value="solve">solve &lt;file&gt; (Solve FEA problem)</option>
+                <option value="validate">validate --fixtures-dir &lt;dir&gt; (Run validation)</option>
+            </select>
+        </div>
+
+        <div id="fileInputDiv" style="margin-bottom: 1rem; display: none;">
+            <label for="inputFile" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Input File:</label>
+            <select id="inputFile" name="inputFile" style="width: 100%; padding: 0.5rem; font-size: 1rem;">
+                <option value="">-- Select a fixture file --</option>
+                {% for fixture in fixtures %}
+                <option value="{{ fixture.name }}">{{ fixture.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div id="dirInputDiv" style="margin-bottom: 1rem; display: none;">
+            <label for="inputDir" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Fixtures Directory:</label>
+            <input type="text" id="inputDir" name="inputDir" value="tests/fixtures/solver"
+                   style="width: 100%; padding: 0.5rem; font-size: 1rem;" />
+        </div>
+
+        <button type="submit" style="background-color: #007bff; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">
+            Run Command
+        </button>
+        <button type="button" id="clearBtn" style="background-color: #6c757d; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; margin-left: 0.5rem;">
+            Clear Output
+        </button>
+    </form>
+</div>
+
+<!-- Output Display -->
+<div style="margin: 2rem 0;">
+    <h2>Output</h2>
+    <div id="status" style="margin-bottom: 1rem; padding: 1rem; background-color: #e7f3ff; border-left: 4px solid #007bff; display: none;">
+        <strong>Status:</strong> <span id="statusText">Running...</span>
+    </div>
+    <div id="output" style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 1rem; border-radius: 4px; font-family: monospace; white-space: pre-wrap; max-height: 600px; overflow-y: auto;">
+        <em style="color: #999;">Output will appear here...</em>
+    </div>
+</div>
+
+<!-- Execution History -->
+<div style="margin: 2rem 0;">
+    <h2>Recent Executions</h2>
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background-color: #f0f0f0; text-align: left;">
+                <th style="padding: 0.75rem; border: 1px solid #ddd;">Time</th>
+                <th style="padding: 0.75rem; border: 1px solid #ddd;">Command</th>
+                <th style="padding: 0.75rem; border: 1px solid #ddd;">File</th>
+                <th style="padding: 0.75rem; border: 1px solid #ddd;">Status</th>
+                <th style="padding: 0.75rem; border: 1px solid #ddd;">Duration</th>
+            </tr>
+        </thead>
+        <tbody id="historyTable">
+            <tr>
+                <td colspan="5" style="padding: 1rem; text-align: center; color: #999; border: 1px solid #ddd;">
+                    No executions yet
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const form = document.getElementById('runCommandForm');
+    const commandSelect = document.getElementById('command');
+    const fileInputDiv = document.getElementById('fileInputDiv');
+    const dirInputDiv = document.getElementById('dirInputDiv');
+    const statusDiv = document.getElementById('status');
+    const statusText = document.getElementById('statusText');
+    const outputDiv = document.getElementById('output');
+    const historyTable = document.getElementById('historyTable');
+    const clearBtn = document.getElementById('clearBtn');
+
+    let executionHistory = [];
+
+    // Show/hide input fields based on command
+    commandSelect.addEventListener('change', function() {
+        const cmd = this.value;
+        if (cmd === 'analyze' || cmd === 'solve') {
+            fileInputDiv.style.display = 'block';
+            dirInputDiv.style.display = 'none';
+        } else if (cmd === 'validate') {
+            fileInputDiv.style.display = 'none';
+            dirInputDiv.style.display = 'block';
+        } else {
+            fileInputDiv.style.display = 'none';
+            dirInputDiv.style.display = 'none';
+        }
+    });
+
+    // Clear output
+    clearBtn.addEventListener('click', function() {
+        outputDiv.innerHTML = '<em style="color: #999;">Output will appear here...</em>';
+        statusDiv.style.display = 'none';
+    });
+
+    // Submit form
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const command = commandSelect.value;
+        const inputFile = document.getElementById('inputFile').value;
+        const inputDir = document.getElementById('inputDir').value;
+
+        // Show running status
+        statusDiv.style.display = 'block';
+        statusText.textContent = 'Running...';
+        statusDiv.style.backgroundColor = '#e7f3ff';
+        statusDiv.style.borderColor = '#007bff';
+        outputDiv.textContent = 'Executing command...\n';
+
+        const startTime = Date.now();
+        let endpoint = '';
+        let body = null;
+
+        // Build API endpoint and body
+        if (command === 'version') {
+            endpoint = '/version';
+        } else if (command === 'help') {
+            endpoint = '/version'; // Use version for now, should add help endpoint
+        } else if (command === 'analyze') {
+            if (!inputFile) {
+                alert('Please select an input file');
+                statusDiv.style.display = 'none';
+                return;
+            }
+            endpoint = `/analyze/${inputFile}`;
+        } else if (command === 'solve') {
+            if (!inputFile) {
+                alert('Please select an input file');
+                statusDiv.style.display = 'none';
+                return;
+            }
+            endpoint = `/solve/${inputFile}`;
+        } else if (command === 'validate') {
+            endpoint = '/validate';
+            body = { fixtures_dir: inputDir };
+        }
+
+        try {
+            const options = {
+                method: body ? 'POST' : 'GET',
+                headers: body ? { 'Content-Type': 'application/json' } : {},
+            };
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+
+            const response = await fetch(endpoint, options);
+            const result = await response.json();
+            const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+            // Update output
+            let output = '';
+            if (result.success) {
+                statusText.textContent = 'Success';
+                statusDiv.style.backgroundColor = '#d4edda';
+                statusDiv.style.borderColor = '#28a745';
+                output = `✓ Command completed successfully in ${duration}s\n\n`;
+            } else {
+                statusText.textContent = 'Failed';
+                statusDiv.style.backgroundColor = '#f8d7da';
+                statusDiv.style.borderColor = '#dc3545';
+                output = `✗ Command failed (exit code ${result.returncode})\n\n`;
+            }
+
+            if (result.stdout) {
+                output += '=== STDOUT ===\n' + result.stdout + '\n\n';
+            }
+            if (result.stderr) {
+                output += '=== STDERR ===\n' + result.stderr + '\n';
+            }
+            if (result.version) {
+                output += result.version + '\n';
+            }
+
+            outputDiv.textContent = output;
+
+            // Add to history
+            const historyEntry = {
+                time: new Date().toLocaleTimeString(),
+                command: command,
+                file: inputFile || inputDir || '-',
+                success: result.success,
+                duration: duration
+            };
+            executionHistory.unshift(historyEntry);
+            if (executionHistory.length > 10) executionHistory.pop();
+            updateHistoryTable();
+
+        } catch (error) {
+            statusText.textContent = 'Error';
+            statusDiv.style.backgroundColor = '#f8d7da';
+            statusDiv.style.borderColor = '#dc3545';
+            outputDiv.textContent = '✗ Error: ' + error.message;
+        }
+    });
+
+    function updateHistoryTable() {
+        if (executionHistory.length === 0) {
+            historyTable.innerHTML = '<tr><td colspan="5" style="padding: 1rem; text-align: center; color: #999; border: 1px solid #ddd;">No executions yet</td></tr>';
+            return;
+        }
+
+        historyTable.innerHTML = executionHistory.map(entry => `
+            <tr style="border-bottom: 1px solid #ddd;">
+                <td style="padding: 0.75rem; border: 1px solid #ddd;">${entry.time}</td>
+                <td style="padding: 0.75rem; border: 1px solid #ddd;">${entry.command}</td>
+                <td style="padding: 0.75rem; border: 1px solid #ddd;">${entry.file}</td>
+                <td style="padding: 0.75rem; border: 1px solid #ddd;">
+                    ${entry.success ? '<span style="color: green;">✓ Success</span>' : '<span style="color: red;">✗ Failed</span>'}
+                </td>
+                <td style="padding: 0.75rem; border: 1px solid #ddd;">${entry.duration}s</td>
+            </tr>
+        `).join('');
+    }
+</script>
+
+{% endblock %}

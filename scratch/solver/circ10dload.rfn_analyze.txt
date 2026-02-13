@@ -1,0 +1,19 @@
+=== ANALYZE: circ10dload.rfn.inp ===
+Duration: 0.003s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 323
+total_data_lines: 992
+node_rows: 670
+element_rows: 292
+material_defs: 0
+has_step: false
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 3
+
+
+=== STDERR ===

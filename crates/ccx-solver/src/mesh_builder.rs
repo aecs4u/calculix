@@ -4,7 +4,7 @@
 //! and constructs the Mesh data structure for solver processing.
 
 use crate::mesh::{Element, ElementType, Mesh, Node};
-use ccx_inp::{Card, Deck};
+use ccx_io::inp::{Card, Deck};
 
 /// Builds a mesh from a parsed input deck
 pub struct MeshBuilder {
@@ -58,14 +58,6 @@ impl MeshBuilder {
         for data_line in &card.data_lines {
             let parts: Vec<&str> = data_line.split(',').collect();
 
-            if parts.len() < 4 {
-                self.errors.push(format!(
-                    "Invalid node data line (expected at least 4 fields): {}",
-                    data_line
-                ));
-                continue;
-            }
-
             // Parse node ID
             let id = match parts[0].trim().parse::<i32>() {
                 Ok(id) => id,
@@ -76,39 +68,28 @@ impl MeshBuilder {
                 }
             };
 
-            // Parse coordinates
-            let x = match parts[1].trim().parse::<f64>() {
-                Ok(x) => x,
-                Err(_) => {
-                    self.errors.push(format!(
-                        "Invalid X coordinate for node {}: {}",
-                        id,
-                        parts[1].trim()
-                    ));
+            // CalculiX semantics for *NODE:
+            // id[,x[,y[,z]]] with missing coordinates defaulting to 0.0.
+            let x = match Self::parse_optional_coordinate(parts.get(1), id, "X") {
+                Ok(value) => value,
+                Err(err) => {
+                    self.errors.push(err);
                     continue;
                 }
             };
 
-            let y = match parts[2].trim().parse::<f64>() {
-                Ok(y) => y,
-                Err(_) => {
-                    self.errors.push(format!(
-                        "Invalid Y coordinate for node {}: {}",
-                        id,
-                        parts[2].trim()
-                    ));
+            let y = match Self::parse_optional_coordinate(parts.get(2), id, "Y") {
+                Ok(value) => value,
+                Err(err) => {
+                    self.errors.push(err);
                     continue;
                 }
             };
 
-            let z = match parts[3].trim().parse::<f64>() {
-                Ok(z) => z,
-                Err(_) => {
-                    self.errors.push(format!(
-                        "Invalid Z coordinate for node {}: {}",
-                        id,
-                        parts[3].trim()
-                    ));
+            let z = match Self::parse_optional_coordinate(parts.get(3), id, "Z") {
+                Ok(value) => value,
+                Err(err) => {
+                    self.errors.push(err);
                     continue;
                 }
             };
@@ -118,6 +99,31 @@ impl MeshBuilder {
         }
 
         Ok(())
+    }
+
+    fn parse_optional_coordinate(
+        raw: Option<&&str>,
+        node_id: i32,
+        axis: &str,
+    ) -> Result<f64, String> {
+        let Some(value) = raw else {
+            return Ok(0.0);
+        };
+
+        let trimmed = value.trim();
+        if trimmed.is_empty() {
+            return Err(format!(
+                "Invalid {} coordinate for node {}: {}",
+                axis, node_id, trimmed
+            ));
+        }
+
+        trimmed.parse::<f64>().map_err(|_| {
+            format!(
+                "Invalid {} coordinate for node {}: {}",
+                axis, node_id, trimmed
+            )
+        })
     }
 
     /// Process an *ELEMENT card
@@ -492,5 +498,24 @@ mod tests {
         assert!((node1.x - 0.0015).abs() < 1e-10);
         assert!((node1.y + 230.0).abs() < 1e-10);
         assert!((node1.z - 4.2).abs() < 1e-10);
+    }
+
+    #[test]
+    fn defaults_missing_node_coordinates_to_zero() {
+        let input = r#"
+*NODE
+1
+2, 1.5
+3, 2.5, -3.0
+4, 4.0, 5.0, 6.0
+"#;
+
+        let deck = parse_deck(input);
+        let mesh = MeshBuilder::build_from_deck(&deck).expect("Failed to build mesh");
+
+        assert_eq!(mesh.get_node(1).unwrap().coords(), [0.0, 0.0, 0.0]);
+        assert_eq!(mesh.get_node(2).unwrap().coords(), [1.5, 0.0, 0.0]);
+        assert_eq!(mesh.get_node(3).unwrap().coords(), [2.5, -3.0, 0.0]);
+        assert_eq!(mesh.get_node(4).unwrap().coords(), [4.0, 5.0, 6.0]);
     }
 }

@@ -1,0 +1,19 @@
+=== ANALYZE: userbeam3.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 11
+total_data_lines: 103
+node_rows: 49
+element_rows: 48
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: true
+has_heat_transfer: false
+unique_keywords: 11
+
+
+=== STDERR ===

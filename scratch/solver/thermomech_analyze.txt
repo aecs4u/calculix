@@ -1,0 +1,19 @@
+=== ANALYZE: thermomech.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 36
+total_data_lines: 888
+node_rows: 522
+element_rows: 128
+material_defs: 1
+has_step: true
+has_static: true
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: true
+unique_keywords: 25
+
+
+=== STDERR ===

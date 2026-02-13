@@ -313,18 +313,15 @@ impl GlobalSystem {
         Ok(())
     }
 
-    /// Apply displacement boundary conditions using penalty method
+    /// Apply displacement boundary conditions using direct elimination.
     ///
-    /// For each constrained DOF:
-    /// - If prescribed displacement = 0: Set large diagonal entry
-    /// - If prescribed displacement ≠ 0: Modify force vector
+    /// This enforces Dirichlet conditions exactly by zeroing the constrained
+    /// row/column, setting the diagonal to 1, and shifting RHS terms.
     fn apply_displacement_bcs(
         &mut self,
         bcs: &BoundaryConditions,
         max_dofs_per_node: usize,
     ) -> Result<(), String> {
-        let penalty = 1e10; // Large penalty factor
-
         for bc in &bcs.displacement_bcs {
             for dof in bc.first_dof..=bc.last_dof {
                 let dof_index = (bc.node - 1) as usize * max_dofs_per_node + (dof - 1);
@@ -336,9 +333,24 @@ impl GlobalSystem {
                     ));
                 }
 
-                // Apply penalty method
-                self.stiffness[(dof_index, dof_index)] += penalty;
-                self.force[dof_index] += penalty * bc.value;
+                // Shift unconstrained equations by known displacement contribution:
+                // F_r <- F_r - K_{r,c} * u_c
+                for row in 0..self.num_dofs {
+                    if row != dof_index {
+                        self.force[row] -= self.stiffness[(row, dof_index)] * bc.value;
+                    }
+                }
+
+                // Zero constrained row/column to enforce exact Dirichlet condition.
+                for col in 0..self.num_dofs {
+                    self.stiffness[(dof_index, col)] = 0.0;
+                }
+                for row in 0..self.num_dofs {
+                    self.stiffness[(row, dof_index)] = 0.0;
+                }
+
+                self.stiffness[(dof_index, dof_index)] = 1.0;
+                self.force[dof_index] = bc.value;
 
                 self.constrained_dofs.push(dof_index);
             }
@@ -552,12 +564,17 @@ mod tests {
         assert!(system.constrained_dofs.contains(&4)); // Node 2 y
         assert!(system.constrained_dofs.contains(&5)); // Node 2 z
 
-        // Penalty method should increase diagonal
-        assert!(system.stiffness[(0, 0)] > 1e9);
-        assert!(system.stiffness[(1, 1)] > 1e9);
-        assert!(system.stiffness[(2, 2)] > 1e9);
-        assert!(system.stiffness[(4, 4)] > 1e9);
-        assert!(system.stiffness[(5, 5)] > 1e9);
+        // Direct elimination should enforce identity rows/cols for constrained DOFs.
+        for &dof in &[0usize, 1, 2, 4, 5] {
+            assert!((system.stiffness[(dof, dof)] - 1.0).abs() < 1e-12);
+            for j in 0..system.num_dofs {
+                if j != dof {
+                    assert!(system.stiffness[(dof, j)].abs() < 1e-12);
+                    assert!(system.stiffness[(j, dof)].abs() < 1e-12);
+                }
+            }
+            assert!(system.force[dof].abs() < 1e-12);
+        }
     }
 
     #[test]

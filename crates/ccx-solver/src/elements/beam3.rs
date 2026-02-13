@@ -96,17 +96,29 @@ impl Beam32 {
     /// Compute element geometry and direction
     ///
     /// Returns (length, unit_direction_vector, midpoint_position)
+    ///
+    /// NOTE: For B32R elements in CalculiX INP files, nodes are ordered as:
+    /// [node1_start, node2_mid, node3_end], so we use nodes[0] to nodes[2] for length
     fn compute_geometry(nodes: &[Node; 3]) -> (f64, Vector3<f64>, Vector3<f64>) {
-        // Use end nodes to compute element direction
-        let dx = nodes[1].x - nodes[0].x;
-        let dy = nodes[1].y - nodes[0].y;
-        let dz = nodes[1].z - nodes[0].z;
+        // Use first and LAST nodes (not first and second!) to compute element direction
+        // For B32R: nodes[0]=start, nodes[2]=end, nodes[1]=midpoint
+        let dx = nodes[2].x - nodes[0].x;
+        let dy = nodes[2].y - nodes[0].y;
+        let dz = nodes[2].z - nodes[0].z;
 
         let length = (dx * dx + dy * dy + dz * dz).sqrt();
         let dir = Vector3::new(dx / length, dy / length, dz / length);
 
         // Midpoint position
-        let mid = Vector3::new(nodes[2].x, nodes[2].y, nodes[2].z);
+        let mid = Vector3::new(nodes[1].x, nodes[1].y, nodes[1].z);
+
+        // DEBUG: Print geometry computation
+        eprintln!("=== DEBUG compute_geometry ===");
+        eprintln!("nodes[0]: ({}, {}, {})", nodes[0].x, nodes[0].y, nodes[0].z);
+        eprintln!("nodes[1]: ({}, {}, {})", nodes[1].x, nodes[1].y, nodes[1].z);
+        eprintln!("nodes[2]: ({}, {}, {})", nodes[2].x, nodes[2].y, nodes[2].z);
+        eprintln!("dx={}, dy={}, dz={}", dx, dy, dz);
+        eprintln!("LENGTH = {}", length);
 
         (length, dir, mid)
     }
@@ -188,17 +200,24 @@ impl Beam32 {
         let iz = self.section.izz;
         let j = self.section.torsion_constant;
 
-        // Use 3-point Gauss quadrature for accurate integration
-        let gauss_points = [
+        // For B32R (Reduced integration), use fewer points for shear terms
+        // to avoid shear locking in slender beams
+        let gauss_points_full = [
             (-0.7745966692414834, 0.5555555555555556),
             (0.0, 0.8888888888888889),
             (0.7745966692414834, 0.5555555555555556),
         ];
 
+        // Reduced integration for shear (2-point)
+        let gauss_points_reduced = [
+            (-0.5773502691896257, 1.0),
+            (0.5773502691896257, 1.0),
+        ];
+
         let mut k_local = Matrix18::zeros();
 
-        // Integrate stiffness contributions
-        for (xi, weight) in gauss_points {
+        // PART 1: Axial and bending stiffness with full integration
+        for (xi, weight) in gauss_points_full {
             let jac = Self::jacobian(nodes, xi);
             let dn = Self::shape_derivatives(xi);
 
@@ -213,22 +232,20 @@ impl Beam32 {
                 }
             }
 
-            // Bending stiffness (simplified - full formulation would include shear)
-            // Bending in y-z plane (about local y-axis)
+            // Bending stiffness only (full integration): EI ∫(dθ/dx)² dx
+            // Bending in x-z plane (about local y-axis): θy DOF
             for i in 0..3 {
-                for j in 0..3 {
-                    let k_bend_y = e * iz * dn_dx[i] * dn_dx[j] * jac * weight;
-                    k_local[(i * 6 + 2, j * 6 + 2)] += k_bend_y; // w-w coupling
-                    k_local[(i * 6 + 4, j * 6 + 4)] += k_bend_y; // θy-θy coupling
+                for jj in 0..3 {
+                    let k_bend = e * iz * dn_dx[i] * dn_dx[jj] * jac * weight;
+                    k_local[(i * 6 + 4, jj * 6 + 4)] += k_bend;
                 }
             }
 
-            // Bending in x-z plane (about local z-axis)
+            // Bending in x-y plane (about local z-axis): θz DOF
             for i in 0..3 {
-                for j in 0..3 {
-                    let k_bend_z = e * iy * dn_dx[i] * dn_dx[j] * jac * weight;
-                    k_local[(i * 6 + 1, j * 6 + 1)] += k_bend_z; // v-v coupling
-                    k_local[(i * 6 + 5, j * 6 + 5)] += k_bend_z; // θz-θz coupling
+                for jj in 0..3 {
+                    let k_bend = e * iy * dn_dx[i] * dn_dx[jj] * jac * weight;
+                    k_local[(i * 6 + 5, jj * 6 + 5)] += k_bend;
                 }
             }
 
@@ -237,6 +254,58 @@ impl Beam32 {
                 for jj in 0..3 {
                     let k_torsion = g * j * dn_dx[i] * dn_dx[jj] * jac * weight;
                     k_local[(i * 6 + 3, jj * 6 + 3)] += k_torsion;
+                }
+            }
+        }
+
+        // PART 2: Shear stiffness with REDUCED integration (B32R)
+        // This prevents shear locking in slender beams
+        let kappa = self.shear_factor;
+        for (xi, weight) in gauss_points_reduced {
+            let jac = Self::jacobian(nodes, xi);
+            let n = Self::shape_functions(xi);
+            let dn = Self::shape_derivatives(xi);
+            let dn_dx = [dn[0] / jac, dn[1] / jac, dn[2] / jac];
+
+            // Shear in x-z plane: displacement w (DOF 2), rotation θy (DOF 4)
+            for i in 0..3 {
+                for jj in 0..3 {
+                    // κGA ∫(dw/dx)(dw/dx) dx
+                    let k_shear_ww = kappa * g * a * dn_dx[i] * dn_dx[jj] * jac * weight;
+                    k_local[(i * 6 + 2, jj * 6 + 2)] += k_shear_ww;
+
+                    // -κGA ∫(dw/dx)(θ) dx
+                    let k_couple_wtheta = -kappa * g * a * dn_dx[i] * n[jj] * jac * weight;
+                    k_local[(i * 6 + 2, jj * 6 + 4)] += k_couple_wtheta;
+
+                    // -κGA ∫(θ)(dw/dx) dx
+                    let k_couple_thetaw = -kappa * g * a * n[i] * dn_dx[jj] * jac * weight;
+                    k_local[(i * 6 + 4, jj * 6 + 2)] += k_couple_thetaw;
+
+                    // κGA ∫(θ)(θ) dx
+                    let k_shear_tt = kappa * g * a * n[i] * n[jj] * jac * weight;
+                    k_local[(i * 6 + 4, jj * 6 + 4)] += k_shear_tt;
+                }
+            }
+
+            // Shear in x-y plane: displacement v (DOF 1), rotation θz (DOF 5)
+            for i in 0..3 {
+                for jj in 0..3 {
+                    // κGA ∫(dv/dx)(dv/dx) dx
+                    let k_shear_vv = kappa * g * a * dn_dx[i] * dn_dx[jj] * jac * weight;
+                    k_local[(i * 6 + 1, jj * 6 + 1)] += k_shear_vv;
+
+                    // -κGA ∫(dv/dx)(θ) dx
+                    let k_couple_vtheta = -kappa * g * a * dn_dx[i] * n[jj] * jac * weight;
+                    k_local[(i * 6 + 1, jj * 6 + 5)] += k_couple_vtheta;
+
+                    // -κGA ∫(θ)(dv/dx) dx
+                    let k_couple_thetav = -kappa * g * a * n[i] * dn_dx[jj] * jac * weight;
+                    k_local[(i * 6 + 5, jj * 6 + 1)] += k_couple_thetav;
+
+                    // κGA ∫(θ)(θ) dx
+                    let k_shear_tt = kappa * g * a * n[i] * n[jj] * jac * weight;
+                    k_local[(i * 6 + 5, jj * 6 + 5)] += k_shear_tt;
                 }
             }
         }

@@ -1,0 +1,19 @@
+=== ANALYZE: gap.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 21
+total_data_lines: 703
+node_rows: 522
+element_rows: 129
+material_defs: 1
+has_step: true
+has_static: true
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 13
+
+
+=== STDERR ===

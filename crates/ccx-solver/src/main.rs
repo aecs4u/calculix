@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use ccx_inp::Deck;
+use ccx_io::inp::Deck;
 use ccx_model::ModelSummary;
 use ccx_solver::{AnalysisPipeline, PORTED_UNITS, legacy_units, migration_report};
 
@@ -113,6 +113,13 @@ fn solve_file(path: &Path) -> Result<(), String> {
 
     println!("Initializing solver for: {}", path.display());
 
+    // Check if B32R elements need expansion
+    if has_b32r_elements(&deck) {
+        eprintln!("\n🔧 B32R elements detected - expansion to C3D20R required");
+        eprintln!("   This feature is in development (Phase 2.2)");
+        eprintln!("   Current implementation uses 1D beam theory\n");
+    }
+
     let pipeline = AnalysisPipeline::detect_from_deck(&deck);
     println!(
         "Detected analysis type: {:?}",
@@ -133,6 +140,25 @@ fn solve_file(path: &Path) -> Result<(), String> {
         }
         Err(err) => Err(format!("Solver error: {}", err)),
     }
+}
+
+/// Check if deck contains B32R beam elements
+fn has_b32r_elements(deck: &Deck) -> bool {
+    for card in &deck.cards {
+        if card.keyword.to_uppercase() == "ELEMENT" {
+            for param in &card.parameters {
+                if param.key.to_uppercase() == "TYPE" {
+                    if let Some(ref val) = param.value {
+                        let typ = val.to_uppercase();
+                        if typ == "B32R" || typ == "B32" {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    false
 }
 
 fn main() -> ExitCode {

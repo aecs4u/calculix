@@ -1,0 +1,19 @@
+=== ANALYZE: contact12.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 23
+total_data_lines: 81
+node_rows: 40
+element_rows: 4
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: true
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 18
+
+
+=== STDERR ===

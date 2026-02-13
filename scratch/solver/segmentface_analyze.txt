@@ -1,0 +1,19 @@
+=== ANALYZE: segmentface.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 19
+total_data_lines: 1111
+node_rows: 661
+element_rows: 192
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: true
+has_heat_transfer: false
+unique_keywords: 15
+
+
+=== STDERR ===

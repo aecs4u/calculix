@@ -1,0 +1,19 @@
+=== ANALYZE: axrad.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 16
+total_data_lines: 93
+node_rows: 53
+element_rows: 10
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: true
+unique_keywords: 15
+
+
+=== STDERR ===

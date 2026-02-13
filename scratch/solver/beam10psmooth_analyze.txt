@@ -1,0 +1,19 @@
+=== ANALYZE: beam10psmooth.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 16
+total_data_lines: 188
+node_rows: 90
+element_rows: 62
+material_defs: 1
+has_step: true
+has_static: true
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 15
+
+
+=== STDERR ===

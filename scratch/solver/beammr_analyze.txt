@@ -1,0 +1,19 @@
+=== ANALYZE: beammr.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 17
+total_data_lines: 337
+node_rows: 262
+element_rows: 64
+material_defs: 1
+has_step: true
+has_static: true
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 15
+
+
+=== STDERR ===

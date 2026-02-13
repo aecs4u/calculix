@@ -1,0 +1,19 @@
+=== ANALYZE: shell2.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 13
+total_data_lines: 28
+node_rows: 16
+element_rows: 2
+material_defs: 1
+has_step: true
+has_static: true
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 13
+
+
+=== STDERR ===

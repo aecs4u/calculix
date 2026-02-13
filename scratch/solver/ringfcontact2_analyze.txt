@@ -1,0 +1,19 @@
+=== ANALYZE: ringfcontact2.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 37
+total_data_lines: 1320
+node_rows: 720
+element_rows: 200
+material_defs: 1
+has_step: true
+has_static: true
+has_dynamic: false
+has_frequency: true
+has_heat_transfer: false
+unique_keywords: 21
+
+
+=== STDERR ===

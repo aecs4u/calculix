@@ -1,0 +1,19 @@
+=== ANALYZE: chanson1.inp ===
+Duration: 0.001s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 20
+total_data_lines: 54
+node_rows: 27
+element_rows: 14
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: true
+unique_keywords: 13
+
+
+=== STDERR ===

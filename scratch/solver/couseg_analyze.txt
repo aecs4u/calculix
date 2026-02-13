@@ -1,0 +1,19 @@
+=== ANALYZE: couseg.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 140
+total_data_lines: 316
+node_rows: 40
+element_rows: 12
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 17
+
+
+=== STDERR ===

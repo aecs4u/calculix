@@ -1,0 +1,19 @@
+=== ANALYZE: contdamp1.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 34
+total_data_lines: 60
+node_rows: 18
+element_rows: 3
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: true
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 21
+
+
+=== STDERR ===

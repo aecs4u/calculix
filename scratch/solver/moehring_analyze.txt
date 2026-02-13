@@ -1,0 +1,19 @@
+=== ANALYZE: moehring.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 25
+total_data_lines: 54
+node_rows: 11
+element_rows: 6
+material_defs: 1
+has_step: true
+has_static: false
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: true
+unique_keywords: 15
+
+
+=== STDERR ===

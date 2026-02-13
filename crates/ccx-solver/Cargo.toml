@@ -5,12 +5,13 @@ edition = "2024"
 build = "build.rs"
 
 [dependencies]
-ccx-inp = { path = "../ccx-inp" }
+ccx-io = { path = "../ccx-io" }
 ccx-model = { path = "../ccx-model" }
 nalgebra = { version = "0.34", features = ["sparse"] }
 nalgebra-sparse = "0.10"
 nalgebra-lapack = "0.27"
 serde = { version = "1.0", features = ["derive"] }
+rayon = "1.10"
 
 # PETSc FFI bindings (optional, enabled with --features petsc)
 # Requires: PETSc 3.15+ installed, PETSC_DIR and PETSC_ARCH environment variables

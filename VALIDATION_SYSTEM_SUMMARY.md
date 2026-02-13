@@ -31,12 +31,12 @@ This document summarizes the comprehensive validation and testing infrastructure
 
 #### Components
 ```
-validation-api/
-├── app/
-│   ├── main.py           (600+ lines - FastAPI app)
-│   ├── database.py       (150+ lines - SQLAlchemy models)
-│   ├── schemas.py        (200+ lines - Pydantic schemas)
-│   └── templates/        (HTML/CSS)
+webapp/
+├── main.py               (FastAPI app)
+├── database.py           (SQLAlchemy models)
+├── schemas.py            (Pydantic schemas)
+├── templates/            (HTML/CSS)
+├── static/               (Static assets)
 ├── scripts/
 │   ├── export_test_results.py
 │   ├── generate_html_report.py
@@ -154,7 +154,7 @@ POST /api/* (all endpoints)        - Create records
 ### Quick Report (No Dependencies)
 
 ```bash
-cd crates/validation-api
+cd webapp
 python3 scripts/export_test_results.py
 python3 scripts/generate_html_report.py
 open validation_report.html
@@ -163,7 +163,7 @@ open validation_report.html
 ### Interactive API
 
 ```bash
-cd crates/validation-api
+cd webapp
 pip install -e .
 ./run.sh
 # Visit http://localhost:8000
@@ -181,14 +181,14 @@ pip install -e .
 - name: Generate validation report
   run: |
     cargo test --workspace
-    python3 crates/validation-api/scripts/export_test_results.py
-    python3 crates/validation-api/scripts/generate_html_report.py
+    python3 webapp/scripts/export_test_results.py
+    python3 webapp/scripts/generate_html_report.py
 
 - name: Upload report
   uses: actions/upload-artifact@v3
   with:
     name: validation-report
-    path: crates/validation-api/validation_report.html
+    path: webapp/validation_report.html
 ```
 
 ## File Structure
@@ -207,12 +207,11 @@ calculix/
 │   │   ├── SOLVER_STATUS.md       (NEW - comprehensive status)
 │   │   └── IMPLEMENTATION_ROADMAP.md (UPDATED)
 │   │
-│   └── validation-api/            (NEW - entire directory)
-│       ├── app/
-│       │   ├── main.py            (FastAPI application)
-│       │   ├── database.py        (SQLAlchemy models)
-│       │   ├── schemas.py         (Pydantic schemas)
-│       │   └── templates/         (HTML templates)
+│   └── webapp/            (NEW - entire directory)
+│       ├── main.py                (FastAPI application)
+│       ├── database.py            (SQLAlchemy models)
+│       ├── schemas.py             (Pydantic schemas)
+│       ├── templates/             (HTML templates)
 │       ├── scripts/
 │       │   ├── export_test_results.py
 │       │   ├── generate_html_report.py
@@ -283,14 +282,14 @@ calculix/
 ### 1. Generate Your First Report
 
 ```bash
-cd crates/validation-api
+cd webapp
 make quick-report
 ```
 
 ### 2. View the Dashboard
 
 ```bash
-cd crates/validation-api
+cd webapp
 make install
 make run-api
 ```
@@ -304,9 +303,9 @@ See `.github/workflows/validation-report.yml`
 ## Documentation Links
 
 - **Main README**: [README.md](README.md)
-- **Validation API**: [crates/validation-api/README.md](crates/validation-api/README.md)
-- **Quick Start**: [crates/validation-api/QUICKSTART.md](crates/validation-api/QUICKSTART.md)
-- **Integration**: [crates/validation-api/INTEGRATION.md](crates/validation-api/INTEGRATION.md)
+- **Validation API**: [webapp/README.md](webapp/README.md)
+- **Quick Start**: [webapp/QUICKSTART.md](webapp/QUICKSTART.md)
+- **Integration**: [webapp/INTEGRATION.md](webapp/INTEGRATION.md)
 - **Test Coverage**: [crates/ccx-solver/TEST_COVERAGE.md](crates/ccx-solver/TEST_COVERAGE.md)
 - **Solver Status**: [crates/ccx-solver/SOLVER_STATUS.md](crates/ccx-solver/SOLVER_STATUS.md)
 - **Examples**: [examples/RUST_SOLVER_EXAMPLES.md](examples/RUST_SOLVER_EXAMPLES.md)

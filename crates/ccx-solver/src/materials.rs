@@ -1,12 +1,13 @@
 //! Material properties for finite element analysis.
 
-use ccx_inp::{Card, Deck};
+use ccx_io::inp::{Card, Deck};
 use std::collections::HashMap;
 
 /// Material model type
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum MaterialModel {
     /// Linear elastic isotropic
+    #[default]
     LinearElastic,
     /// Plastic (elasto-plastic)
     Plastic,
@@ -17,7 +18,7 @@ pub enum MaterialModel {
 }
 
 /// A material definition
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Material {
     /// Material name
     pub name: String,

@@ -60,7 +60,7 @@ All failures are due to file encoding issues (non-UTF-8):
 
 ### 📊 Database Integration
 
-#### New Import Script: [crates/validation-api/scripts/import_examples.py](crates/validation-api/scripts/import_examples.py)
+#### New Import Script: [webapp/scripts/import_examples.py](webapp/scripts/import_examples.py)
 
 **Capabilities:**
 - Imports all example INP files into validation database
@@ -113,7 +113,7 @@ cargo test -p ccx-solver --test examples_validation -- --nocapture --test-thread
 ### Importing Examples to Database
 
 ```bash
-cd crates/validation-api
+cd webapp
 python3 scripts/import_examples.py
 ```
 

@@ -1,0 +1,19 @@
+=== ANALYZE: metalforming.inp ===
+Duration: 0.002s
+Exit Code: 0
+
+=== STDOUT ===
+total_cards: 106
+total_data_lines: 3717
+node_rows: 2032
+element_rows: 848
+material_defs: 2
+has_step: true
+has_static: true
+has_dynamic: false
+has_frequency: false
+has_heat_transfer: false
+unique_keywords: 20
+
+
+=== STDERR ===
